@@ -14,7 +14,9 @@
     "infra:down": "docker compose -f infra/docker/docker-compose.yml down",
     "db:studio": "npm run prisma:studio -w apps/api",
     "db:migrate": "npm run prisma:migrate -w apps/api",
-    "db:generate": "npm run prisma:generate -w apps/api"
+    "db:generate": "npm run prisma:generate -w apps/api",
+    "db:migrate:dev": "npm run prisma:migrate:dev -w apps/api",
+    "db:migrate:deploy": "npm run prisma:migrate:deploy -w apps/api"
   },
   "repository": {
     "type": "git",
