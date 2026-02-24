@@ -37,8 +37,8 @@
 - [x] Authorization guards (JWT access guard on protected routes)
 - [x] Unified error format/exception filter
 - [x] Request correlation ID (`x-request-id`)
-- [ ] Rate limiting by route category (auth/public/private)
-- [ ] Idempotency for appointment creation (client request key)
+- [x] Rate limiting by route category (auth/public/private)
+- [x] Idempotency for appointment creation (client request key)
 - [ ] Worker job processors (confirmation + reminders)
 - [ ] Email provider integration (send + retry + dead-letter strategy)
 - [ ] WhatsApp provider integration (optional for MVP scope)
@@ -51,8 +51,8 @@ Implemented to start frontend integration:
 
 Still pending before production hardening:
 - [ ] Appointment create/list/cancel integration tests
-- [ ] OpenAPI docs aligned with real response contracts
-- [ ] Seed script with demo data for frontend development
+- [x] OpenAPI docs aligned with real request contracts
+- [x] Seed script with demo data for frontend development
 
 ## 8) Commands
 ```bash
@@ -66,4 +66,9 @@ npm run dev:worker
 npm run db:generate
 npm run db:migrate:deploy
 npm run db:studio
+npm run db:seed
 ```
+
+## Notes
+- Current idempotency implementation uses in-memory cache keyed by `x-idempotency-key` + `userId`.
+- For horizontal scaling, migrate idempotency storage to Redis/PostgreSQL unique key strategy.

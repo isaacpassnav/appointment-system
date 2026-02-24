@@ -7,12 +7,20 @@ import {
 import { AppointmentStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { IdempotencyCacheService } from './idempotency-cache.service';
 
 @Injectable()
 export class AppointmentsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly idempotencyCache: IdempotencyCacheService,
+  ) {}
 
-  async create(userId: string, dto: CreateAppointmentDto) {
+  async create(
+    userId: string,
+    dto: CreateAppointmentDto,
+    idempotencyKey?: string,
+  ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: { id: true },
@@ -25,6 +33,18 @@ export class AppointmentsService {
     const startsAt = new Date(dto.startsAt);
     if (Number.isNaN(startsAt.getTime())) {
       throw new BadRequestException('Invalid startsAt format.');
+    }
+
+    const safeIdempotencyKey = this.normalizeIdempotencyKey(idempotencyKey);
+    const cacheKey = safeIdempotencyKey
+      ? this.buildCacheKey(userId, safeIdempotencyKey)
+      : null;
+
+    if (cacheKey) {
+      const cachedAppointmentId = this.idempotencyCache.find(cacheKey);
+      if (cachedAppointmentId) {
+        return this.findOne(userId, cachedAppointmentId);
+      }
     }
 
     const endsAt = new Date(startsAt.getTime() + dto.durationMinutes * 60_000);
@@ -45,7 +65,7 @@ export class AppointmentsService {
       throw new ConflictException('Appointment overlaps with an existing one.');
     }
 
-    return this.prisma.appointment.create({
+    const appointment = await this.prisma.appointment.create({
       data: {
         userId,
         startsAt,
@@ -53,6 +73,12 @@ export class AppointmentsService {
         notes: dto.notes?.trim(),
       },
     });
+
+    if (cacheKey) {
+      this.idempotencyCache.save(cacheKey, appointment.id);
+    }
+
+    return appointment;
   }
 
   findAll(userId: string) {
@@ -87,5 +113,28 @@ export class AppointmentsService {
         cancelledAt: new Date(),
       },
     });
+  }
+
+  private normalizeIdempotencyKey(rawKey?: string): string | null {
+    if (!rawKey) {
+      return null;
+    }
+
+    const normalized = rawKey.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    if (normalized.length > 120) {
+      throw new BadRequestException(
+        'x-idempotency-key must be at most 120 characters.',
+      );
+    }
+
+    return normalized;
+  }
+
+  private buildCacheKey(userId: string, idempotencyKey: string): string {
+    return `${userId}:${idempotencyKey}`;
   }
 }

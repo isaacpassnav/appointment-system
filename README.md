@@ -88,6 +88,31 @@ Entregar una primera version estable que permita:
 - Proteccion de rutas privadas en frontend.
 - Rate limiting y auditoria de eventos.
 
+## Backend status (actual)
+- Auth JWT (access + refresh) operativo.
+- Endpoints de citas (`create/list/findOne/cancel`) operativos con validacion de conflictos.
+- Rate limiting por categoria de ruta (`auth`, `public`, `private`) activo.
+- Idempotencia para crear cita via `x-idempotency-key` (cache en memoria, MVP).
+- Swagger disponible en `/api/docs` con contratos request actualizados.
+- Seed de datos demo disponible para acelerar integracion frontend.
+
+### Comandos backend utiles
+```bash
+# levantar infraestructura local
+npm run infra:up
+
+# api + worker (en terminales separadas o con concurrently)
+npm run dev:api
+npm run dev:worker
+npm run dev
+
+# prisma
+npm run db:generate
+npm run db:migrate:deploy
+npm run db:studio
+npm run db:seed
+```
+
 ## Testing recomendado
 
 ### Backend
