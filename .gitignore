@@ -18,6 +18,12 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# Next.js build output
+apps/web/.next/
+
+# Claude Code local config
+.claude/
+
 # IDE / OS
 .vscode/
 .idea/
