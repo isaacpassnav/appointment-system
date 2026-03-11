@@ -5,6 +5,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Pillar = { title: string; description: string };
@@ -24,6 +25,39 @@ export function HomeContent() {
   const roadmap = t('home.roadmap', { returnObjects: true }) as RoadmapItem[];
   const testimonials = t('home.testimonials', { returnObjects: true }) as Testimonial[];
   const faqs = t('home.faqs', { returnObjects: true }) as Faq[];
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const testimonialCount = testimonials.length;
+
+  const currentTestimonial = useMemo(() => {
+    if (testimonialCount === 0) return null;
+    return testimonials[activeTestimonial % testimonialCount];
+  }, [activeTestimonial, testimonialCount, testimonials]);
+
+  useEffect(() => {
+    if (testimonialCount <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveTestimonial((value) => (value + 1) % testimonialCount);
+    }, 5200);
+    return () => window.clearInterval(timer);
+  }, [testimonialCount]);
+
+  const getInitials = (name: string) =>
+    name
+      .split(' ')
+      .filter(Boolean)
+      .map((part) => part[0]?.toUpperCase())
+      .slice(0, 2)
+      .join('');
+
+  const goPrev = () => {
+    if (testimonialCount === 0) return;
+    setActiveTestimonial((value) => (value - 1 + testimonialCount) % testimonialCount);
+  };
+
+  const goNext = () => {
+    if (testimonialCount === 0) return;
+    setActiveTestimonial((value) => (value + 1) % testimonialCount);
+  };
 
   return (
     <section className="stack">
@@ -152,17 +186,42 @@ export function HomeContent() {
           <CardTitle>{t('home.testimonialsTitle')}</CardTitle>
           <p className="muted">{t('home.testimonialsSubtitle')}</p>
         </CardHeader>
-        <CardContent className="testimonial-grid">
-          {testimonials.map((item, index) => (
-            <article key={item.name} className="testimonial-card" data-aos="zoom-in" data-aos-delay={index * 80}>
-              <div className="stars">*****</div>
-              <p className="quote">{item.quote}</p>
-              <div className="author">
-                <strong>{item.name}</strong>
-                <span className="muted">{item.role}</span>
+        <CardContent>
+          {currentTestimonial && (
+            <div className="testimonial-carousel">
+              <div className="carousel-controls">
+                <button type="button" className="carousel-control" onClick={goPrev} aria-label="Previous testimonial">
+                  ‹
+                </button>
+                <button type="button" className="carousel-control" onClick={goNext} aria-label="Next testimonial">
+                  ›
+                </button>
               </div>
-            </article>
-          ))}
+              <article className="testimonial-card testimonial-slide" data-aos="zoom-in">
+                <div className="avatar" aria-hidden="true">
+                  <span>{getInitials(currentTestimonial.name)}</span>
+                </div>
+                <div className="stars">*****</div>
+                <p className="quote">{currentTestimonial.quote}</p>
+                <div className="author">
+                  <strong>{currentTestimonial.name}</strong>
+                  <span className="muted">{currentTestimonial.role}</span>
+                </div>
+              </article>
+              <div className="testimonial-dots" role="tablist" aria-label="Testimonials">
+                {testimonials.map((item, index) => (
+                  <button
+                    key={item.name}
+                    type="button"
+                    className={`dot ${index === activeTestimonial ? 'active' : ''}`}
+                    aria-label={`Go to testimonial ${index + 1}`}
+                    aria-pressed={index === activeTestimonial}
+                    onClick={() => setActiveTestimonial(index)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 

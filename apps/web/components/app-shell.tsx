@@ -30,9 +30,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="site-wrapper">
-      <div className="bg-glow bg-glow-top" />
-      <div className="bg-glow bg-glow-side" />
-      <div className="bg-grid" />
+      <div className="bg-layer" aria-hidden="true">
+        <div className="bg-glow bg-glow-top" />
+        <div className="bg-glow bg-glow-side" />
+        <div className="bg-grid" />
+      </div>
       <header className="topbar">
         <div className="container topbar-inner">
           <Link href="/" className="brand">
