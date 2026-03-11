@@ -49,15 +49,6 @@ export function HomeContent() {
       .slice(0, 2)
       .join('');
 
-  const goPrev = () => {
-    if (testimonialCount === 0) return;
-    setActiveTestimonial((value) => (value - 1 + testimonialCount) % testimonialCount);
-  };
-
-  const goNext = () => {
-    if (testimonialCount === 0) return;
-    setActiveTestimonial((value) => (value + 1) % testimonialCount);
-  };
 
   return (
     <section className="stack">
@@ -189,14 +180,6 @@ export function HomeContent() {
         <CardContent>
           {currentTestimonial && (
             <div className="testimonial-carousel">
-              <div className="carousel-controls">
-                <button type="button" className="carousel-control" onClick={goPrev} aria-label="Previous testimonial">
-                  ‹
-                </button>
-                <button type="button" className="carousel-control" onClick={goNext} aria-label="Next testimonial">
-                  ›
-                </button>
-              </div>
               <article className="testimonial-card testimonial-slide" data-aos="zoom-in">
                 <div className="avatar" aria-hidden="true">
                   <span>{getInitials(currentTestimonial.name)}</span>

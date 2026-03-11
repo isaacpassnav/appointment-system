@@ -61,7 +61,7 @@ body {
     radial-gradient(circle at 80% 0%, rgba(36, 18, 92, 0.5), transparent 60%),
     var(--bg);
   color: var(--ink);
-  min-height: 100vh;
+  min-height: 100%;
   line-height: 1.6;
 }
 
@@ -69,7 +69,28 @@ html,
 body {
   width: 100%;
   max-width: 100%;
-  overflow-x: clip;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+html {
+  background: var(--bg);
+  overflow-y: auto;
+}
+
+body {
+  min-height: 100vh;
+  overflow-y: visible;
+}
+
+body * {
+  scrollbar-width: none;
+}
+
+body *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 a {
@@ -99,7 +120,7 @@ img {
   position: fixed;
   inset: 0;
   pointer-events: none;
-  overflow: hidden;
+  overflow: clip;
   z-index: -2;
 }
 
@@ -121,19 +142,14 @@ img {
 }
 
 .bg-grid {
-  position: absolute;
-  inset: 0;
-  opacity: 0.2;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 140px 140px;
-  mask-image: radial-gradient(circle at top, rgba(0, 0, 0, 0.9), transparent 70%);
-  -webkit-mask-image: radial-gradient(circle at top, rgba(0, 0, 0, 0.9), transparent 70%);
+  display: none;
 }
 
 .container {
-  width: min(1160px, 90vw);
+  width: 100%;
+  max-width: 1160px;
   margin: 0 auto;
+  padding: 0 5vw;
 }
 
 .topbar {
@@ -257,23 +273,24 @@ img {
 }
 
 .page-content {
-  padding: calc(var(--topbar-height) + 24px) 0 100px;
+  padding: calc(var(--topbar-height) + 12px) 0 64px;
 }
 
 .stack > * + * {
-  margin-top: 2.5rem;
+  margin-top: 1.5rem;
 }
 
 .hero-combo {
   background: linear-gradient(145deg, rgba(72, 44, 174, 0.5), rgba(11, 10, 22, 0.8));
-  border: 1px solid rgba(148, 118, 255, 0.25);
+  border: 0;
+  box-shadow: 0 0 0 1px rgba(148, 118, 255, 0.16), 0 30px 80px rgba(10, 10, 25, 0.35);
 }
 
 .hero-combo-content {
   display: grid;
   gap: 22px;
   grid-template-columns: 1fr;
-  padding: 42px;
+  padding: 34px;
 }
 
 .hero-copy {
@@ -351,7 +368,7 @@ img {
 
 .feature-grid {
   display: grid;
-  gap: 18px;
+  gap: 14px;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
 }
 
@@ -392,7 +409,7 @@ img {
 
 .split-grid {
   display: grid;
-  gap: 20px;
+  gap: 16px;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
 }
 
@@ -474,39 +491,12 @@ img {
 
 .testimonial-carousel {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   position: relative;
 }
 
 .testimonial-slide {
   align-items: flex-start;
-}
-
-.carousel-controls {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  display: flex;
-  gap: 8px;
-}
-
-.carousel-control {
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  border: 1px solid rgba(148, 118, 255, 0.4);
-  background: rgba(10, 10, 20, 0.7);
-  color: var(--ink);
-  font-size: 1.1rem;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.carousel-control:hover {
-  transform: translateY(-1px);
-  border-color: rgba(148, 118, 255, 0.8);
 }
 
 .testimonial-dots {

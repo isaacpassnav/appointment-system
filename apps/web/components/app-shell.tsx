@@ -28,6 +28,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     AOS.init({ once: true, duration: 700, easing: 'ease-out-cubic', offset: 80 });
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if ('scrollRestoration' in window.history) {
+      window.history.scrollRestoration = 'manual';
+    }
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [pathname]);
+
   return (
     <div className="site-wrapper">
       <div className="bg-layer" aria-hidden="true">

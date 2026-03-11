@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo } from 'react';
-import type { ComponentType, SVGProps } from 'react';
+import type { ElementType } from 'react';
 import { US, ES, BR } from 'country-flag-icons/react/3x2';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -13,10 +13,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { SupportedLocale } from '@/lib/i18n';
 
+type FlagIcon = ElementType<{ className?: string; 'aria-hidden'?: boolean }>;
+
 const languages: Array<{
   code: SupportedLocale;
   label: string;
-  Flag: ComponentType<SVGProps<SVGSVGElement>>;
+  Flag: FlagIcon;
 }> = [
   { code: 'en', label: 'English', Flag: US },
   { code: 'es', label: 'Espanol', Flag: ES },
