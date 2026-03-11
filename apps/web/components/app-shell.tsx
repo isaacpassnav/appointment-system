@@ -42,7 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="site-wrapper">
-      <div className="bg-layer" aria-hidden="true">
+      <div className="bg-layer" aria-hidden={true}>
         <div className="bg-glow bg-glow-top" />
         <div className="bg-glow bg-glow-side" />
         <div className="bg-grid" />
@@ -61,7 +61,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             aria-label={t('nav.menu')}
           >
             <span className="sr-only">{t('nav.menu')}</span>
-            <span className={`hamburger ${menuOpen ? 'open' : ''}`} aria-hidden="true" />
+            <span className={`hamburger ${menuOpen ? 'open' : ''}`} aria-hidden={true} />
           </button>
 
           <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
@@ -143,11 +143,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 rel="noreferrer"
                 aria-label="LinkedIn"
               >
-                <FaLinkedinIn aria-hidden="true" />
+                <FaLinkedinIn aria-hidden={true} />
                 <span className="sr-only">LinkedIn</span>
               </a>
               <a href="https://github.com/isaacpassnav" target="_blank" rel="noreferrer" aria-label="GitHub">
-                <FaGithub aria-hidden="true" />
+                <FaGithub aria-hidden={true} />
                 <span className="sr-only">GitHub</span>
               </a>
               <a
@@ -156,11 +156,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 rel="noreferrer"
                 aria-label="Instagram"
               >
-                <FaInstagram aria-hidden="true" />
+                <FaInstagram aria-hidden={true} />
                 <span className="sr-only">Instagram</span>
               </a>
               <a href="https://x.com/IsaacPasapera" target="_blank" rel="noreferrer" aria-label="X">
-                <FaXTwitter aria-hidden="true" />
+                <FaXTwitter aria-hidden={true} />
                 <span className="sr-only">X</span>
               </a>
             </div>

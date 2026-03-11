@@ -23,7 +23,9 @@ const resources = {
       },
       home: {
         eyebrow: 'AppointmentOS - multi-tenant SaaS',
-        title: 'Intelligent scheduling for businesses that grow in layers.',
+        titlePrefix: '',
+        titleSuffix: 'scheduling for businesses that grow in layers.',
+        heroWords: ['Intelligent', 'Automated', 'Scalable', 'Predictive'],
         subtitle:
           'Build an ecosystem with superadmin, resellers, and businesses, each with their own panel. Ready to monetize by plan and expand with AI.',
         ctaPrimary: 'Create account',
@@ -73,6 +75,10 @@ const resources = {
           'Subscriptions per tenant, commission per payment, and a reseller program with wholesale pricing.',
         businessPrimary: 'Create tenant',
         businessSecondary: 'Access',
+        businessChartLabel: 'Revenue mix indicators',
+        businessMetricA: 'Subscription lift',
+        businessMetricB: 'Reseller expansion',
+        businessMetricC: 'Payment success',
         roadmapTitle: 'Execution roadmap',
         roadmapSubtitle: 'We prioritize daily operations first, then scale with plans and resellers.',
         roadmap: [
@@ -97,6 +103,26 @@ const resources = {
             name: 'Andrea P.',
             role: 'Beauty studio',
             quote: 'The reseller idea opens a new channel without hiring more staff.',
+          },
+          {
+            name: 'Jonathan K.',
+            role: 'Medical practice',
+            quote: 'Our team finally sees all availability without manual follow ups.',
+          },
+          {
+            name: 'Paula S.',
+            role: 'Wellness spa',
+            quote: 'Clients love the reminders and our no-shows dropped fast.',
+          },
+          {
+            name: 'Miguel T.',
+            role: 'Private consultancy',
+            quote: 'The dashboard gives me clear visibility on revenue and growth.',
+          },
+          {
+            name: 'Renata B.',
+            role: 'Aesthetic center',
+            quote: 'Setup was quick and the AI answers common questions for us.',
           },
         ],
         faqTitle: 'FAQ',
@@ -216,7 +242,9 @@ const resources = {
       },
       home: {
         eyebrow: 'AppointmentOS - SaaS multi-tenant',
-        title: 'Agenda inteligente para negocios que crecen en capas.',
+        titlePrefix: '',
+        titleSuffix: 'agenda para negocios que crecen en capas.',
+        heroWords: ['Inteligente', 'Automatica', 'Escalable', 'Predictiva'],
         subtitle:
           'Crea un ecosistema con superadmin, resellers y negocios, cada uno con su panel. Listo para monetizar por plan y expandir con IA.',
         ctaPrimary: 'Crear cuenta',
@@ -266,6 +294,10 @@ const resources = {
           'Suscripciones por tenant, comision por pago y un programa de resellers mayorista.',
         businessPrimary: 'Crear tenant',
         businessSecondary: 'Acceder',
+        businessChartLabel: 'Indicadores de ingresos',
+        businessMetricA: 'Aumento en suscripciones',
+        businessMetricB: 'Expansion reseller',
+        businessMetricC: 'Pagos exitosos',
         roadmapTitle: 'Ruta de ejecucion',
         roadmapSubtitle: 'Priorizamos operacion diaria primero y luego escala con planes y resellers.',
         roadmap: [
@@ -290,6 +322,26 @@ const resources = {
             name: 'Andrea P.',
             role: 'Estudio de belleza',
             quote: 'La idea de resellers abre un nuevo canal sin mas staff.',
+          },
+          {
+            name: 'Jonathan K.',
+            role: 'Consultorio medico',
+            quote: 'Por fin vemos la disponibilidad sin seguir con mensajes.',
+          },
+          {
+            name: 'Paula S.',
+            role: 'Spa wellness',
+            quote: 'Los recordatorios bajaron los no-shows en pocas semanas.',
+          },
+          {
+            name: 'Miguel T.',
+            role: 'Consultoria privada',
+            quote: 'El dashboard me da claridad de ingresos y crecimiento.',
+          },
+          {
+            name: 'Renata B.',
+            role: 'Centro estetico',
+            quote: 'La configuracion fue rapida y la IA responde dudas comunes.',
           },
         ],
         faqTitle: 'FAQ',
@@ -407,7 +459,9 @@ const resources = {
       },
       home: {
         eyebrow: 'AppointmentOS - SaaS multi-tenant',
-        title: 'Agendamento inteligente para negocios que crescem em camadas.',
+        titlePrefix: '',
+        titleSuffix: 'agendamento para negocios que crescem em camadas.',
+        heroWords: ['Inteligente', 'Automatizado', 'Escalavel', 'Preditivo'],
         subtitle:
           'Crie um ecossistema com superadmin, resellers e negocios, cada um com seu painel. Pronto para monetizar por plano e crescer com IA.',
         ctaPrimary: 'Criar conta',
@@ -456,6 +510,10 @@ const resources = {
         businessBody: 'Assinaturas por tenant, comissao por pagamento e programa de resellers.',
         businessPrimary: 'Criar tenant',
         businessSecondary: 'Acessar',
+        businessChartLabel: 'Indicadores de receita',
+        businessMetricA: 'Alta em assinaturas',
+        businessMetricB: 'Expansao reseller',
+        businessMetricC: 'Pagamentos ok',
         roadmapTitle: 'Roteiro de execucao',
         roadmapSubtitle: 'Focamos na operacao diaria primeiro e depois escalamos com planos.',
         roadmap: [
@@ -480,6 +538,26 @@ const resources = {
             name: 'Andrea P.',
             role: 'Estudio de beleza',
             quote: 'A ideia de resellers abre um novo canal sem mais equipe.',
+          },
+          {
+            name: 'Jonathan K.',
+            role: 'Consultorio medico',
+            quote: 'Finalmente vemos a disponibilidade sem mensagens manuais.',
+          },
+          {
+            name: 'Paula S.',
+            role: 'Spa wellness',
+            quote: 'Os lembretes reduziram no-shows rapidamente.',
+          },
+          {
+            name: 'Miguel T.',
+            role: 'Consultoria privada',
+            quote: 'O dashboard mostra receita e crescimento com clareza.',
+          },
+          {
+            name: 'Renata B.',
+            role: 'Centro estetico',
+            quote: 'A configuracao foi rapida e a IA responde perguntas comuns.',
           },
         ],
         faqTitle: 'FAQ',

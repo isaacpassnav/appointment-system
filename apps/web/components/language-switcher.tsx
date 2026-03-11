@@ -54,14 +54,14 @@ export function LanguageSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="lang-trigger">
-          <current.Flag className="flag-icon" aria-hidden="true" />
+          <current.Flag className="flag-icon" aria-hidden={true} />
           {current.code.toUpperCase()}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="lang-menu">
         {languages.map((lang) => (
           <DropdownMenuItem key={lang.code} onClick={() => setLanguage(lang.code)}>
-            <lang.Flag className="flag-icon" aria-hidden="true" />
+            <lang.Flag className="flag-icon" aria-hidden={true} />
             {lang.label}
           </DropdownMenuItem>
         ))}

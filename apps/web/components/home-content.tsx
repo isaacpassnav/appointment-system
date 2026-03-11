@@ -25,21 +25,51 @@ export function HomeContent() {
   const roadmap = t('home.roadmap', { returnObjects: true }) as RoadmapItem[];
   const testimonials = t('home.testimonials', { returnObjects: true }) as Testimonial[];
   const faqs = t('home.faqs', { returnObjects: true }) as Faq[];
+  const heroWords = t('home.heroWords', { returnObjects: true }) as string[];
+  const titlePrefix = t('home.titlePrefix');
+  const [activeWordIndex, setActiveWordIndex] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [slidesPerView, setSlidesPerView] = useState(3);
   const testimonialCount = testimonials.length;
+  const maxTestimonialIndex = Math.max(0, testimonialCount - slidesPerView);
 
-  const currentTestimonial = useMemo(() => {
-    if (testimonialCount === 0) return null;
-    return testimonials[activeTestimonial % testimonialCount];
-  }, [activeTestimonial, testimonialCount, testimonials]);
+  const currentTestimonialIndex = Math.min(activeTestimonial, maxTestimonialIndex);
+  const visibleTestimonials = useMemo(() => {
+    if (testimonialCount === 0) return [];
+    const start = currentTestimonialIndex;
+    const end = start + slidesPerView;
+    return testimonials.slice(start, end);
+  }, [currentTestimonialIndex, slidesPerView, testimonialCount, testimonials]);
+
+  const currentHeroWord = heroWords[activeWordIndex % heroWords.length] ?? '';
 
   useEffect(() => {
-    if (testimonialCount <= 1) return;
+    if (testimonialCount <= slidesPerView) return;
     const timer = window.setInterval(() => {
-      setActiveTestimonial((value) => (value + 1) % testimonialCount);
+      setActiveTestimonial((value) => (value + 1) % (maxTestimonialIndex + 1));
     }, 5200);
     return () => window.clearInterval(timer);
-  }, [testimonialCount]);
+  }, [maxTestimonialIndex, slidesPerView, testimonialCount]);
+
+  useEffect(() => {
+    if (heroWords.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveWordIndex((value) => (value + 1) % heroWords.length);
+    }, 2800);
+    return () => window.clearInterval(timer);
+  }, [heroWords.length]);
+
+  useEffect(() => {
+    const resolveSlides = () => {
+      if (window.innerWidth >= 1100) return 3;
+      if (window.innerWidth >= 720) return 2;
+      return 1;
+    };
+    const updateSlides = () => setSlidesPerView(resolveSlides());
+    updateSlides();
+    window.addEventListener('resize', updateSlides);
+    return () => window.removeEventListener('resize', updateSlides);
+  }, []);
 
   const getInitials = (name: string) =>
     name
@@ -52,27 +82,31 @@ export function HomeContent() {
 
   return (
     <section className="stack">
-      <Card className="hero-combo" data-aos="fade-up">
+      <Card className="hero-combo hero-center" data-aos="fade-up">
         <CardContent className="hero-combo-content">
-          <div className="hero-copy">
-            <p className="eyebrow">{t('home.eyebrow')}</p>
-            <h1 className="hero-title">{t('home.title')}</h1>
-            <p className="hero-sub">{t('home.subtitle')}</p>
-            <div className="hero-actions">
-              <Button asChild>
-                <Link href="/signup">{t('home.ctaPrimary')}</Link>
-              </Button>
-              <Button variant="outline" asChild>
-                <Link href="/dashboard">{t('home.ctaSecondary')}</Link>
-              </Button>
-            </div>
-            <div className="hero-tags">
-              {tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
-                  {tag}
-                </Badge>
-              ))}
-            </div>
+          <p className="eyebrow">{t('home.eyebrow')}</p>
+          <h1 className="hero-title">
+            {titlePrefix ? `${titlePrefix} ` : ''}
+            <span key={currentHeroWord} className="hero-word">
+              {currentHeroWord}
+            </span>{' '}
+            {t('home.titleSuffix')}
+          </h1>
+          <p className="hero-sub">{t('home.subtitle')}</p>
+          <div className="hero-actions">
+            <Button asChild>
+              <Link href="/signup">{t('home.ctaPrimary')}</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard">{t('home.ctaSecondary')}</Link>
+            </Button>
+          </div>
+          <div className="hero-tags">
+            {tags.map((tag) => (
+              <Badge key={tag} variant="secondary">
+                {tag}
+              </Badge>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -152,6 +186,33 @@ export function HomeContent() {
                 <Link href="/login">{t('home.businessSecondary')}</Link>
               </Button>
             </div>
+            <div className="business-chart" role="img" aria-label={t('home.businessChartLabel')}>
+              <div className="chart-bars">
+                <div className="chart-bar" style={{ ['--bar-height' as string]: '82%' }}>
+                  <span>Subs</span>
+                </div>
+                <div className="chart-bar" style={{ ['--bar-height' as string]: '64%' }}>
+                  <span>Fees</span>
+                </div>
+                <div className="chart-bar" style={{ ['--bar-height' as string]: '92%' }}>
+                  <span>Resell</span>
+                </div>
+              </div>
+              <div className="chart-metrics">
+                <div>
+                  <strong>+38%</strong>
+                  <span>{t('home.businessMetricA')}</span>
+                </div>
+                <div>
+                  <strong>2.7x</strong>
+                  <span>{t('home.businessMetricB')}</span>
+                </div>
+                <div>
+                  <strong>99%</strong>
+                  <span>{t('home.businessMetricC')}</span>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -178,27 +239,31 @@ export function HomeContent() {
           <p className="muted">{t('home.testimonialsSubtitle')}</p>
         </CardHeader>
         <CardContent>
-          {currentTestimonial && (
-            <div className="testimonial-carousel">
-              <article className="testimonial-card testimonial-slide" data-aos="zoom-in">
-                <div className="avatar" aria-hidden="true">
-                  <span>{getInitials(currentTestimonial.name)}</span>
-                </div>
-                <div className="stars">*****</div>
-                <p className="quote">{currentTestimonial.quote}</p>
-                <div className="author">
-                  <strong>{currentTestimonial.name}</strong>
-                  <span className="muted">{currentTestimonial.role}</span>
-                </div>
-              </article>
-              <div className="testimonial-dots" role="tablist" aria-label="Testimonials">
+          {visibleTestimonials.length > 0 && (
+            <div className="testimonial-carousel" style={{ ['--slides-per-view' as string]: slidesPerView }}>
+              <div className="testimonial-track" style={{ ['--slide-index' as string]: currentTestimonialIndex }}>
                 {testimonials.map((item, index) => (
+                  <article key={`${item.name}-${index}`} className="testimonial-card testimonial-slide">
+                    <div className="avatar" aria-hidden={true}>
+                      <span>{getInitials(item.name)}</span>
+                    </div>
+                    <div className="stars">*****</div>
+                    <p className="quote">{item.quote}</p>
+                    <div className="author">
+                      <strong>{item.name}</strong>
+                      <span className="muted">{item.role}</span>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <div className="testimonial-dots" role="tablist" aria-label="Testimonials">
+                {Array.from({ length: maxTestimonialIndex + 1 }, (_, index) => (
                   <button
-                    key={item.name}
+                    key={`dot-${index}`}
                     type="button"
-                    className={`dot ${index === activeTestimonial ? 'active' : ''}`}
-                    aria-label={`Go to testimonial ${index + 1}`}
-                    aria-pressed={index === activeTestimonial}
+                    className={`dot ${index === currentTestimonialIndex ? 'active' : ''}`}
+                    aria-label={`Go to testimonial set ${index + 1}`}
+                    aria-pressed={index === currentTestimonialIndex}
                     onClick={() => setActiveTestimonial(index)}
                   />
                 ))}
