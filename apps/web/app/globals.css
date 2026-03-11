@@ -322,7 +322,8 @@ img {
 }
 
 .hero-word {
-  color: hsl(var(--primary));
+  color: #f3c7ff;
+  text-shadow: 0 0 18px rgba(243, 199, 255, 0.5);
   position: relative;
   animation: wordFade 0.5s ease;
 }
@@ -460,44 +461,46 @@ img {
   background: rgba(12, 10, 28, 0.65);
   display: grid;
   gap: 16px;
-}
-
-.chart-bars {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  align-items: end;
-  height: 140px;
-}
-
-.chart-bar {
+  overflow: hidden;
   position: relative;
-  height: var(--bar-height);
-  border-radius: 16px 16px 10px 10px;
-  background: linear-gradient(180deg, rgba(148, 118, 255, 0.9), rgba(86, 54, 210, 0.2));
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 8px;
-  animation: rise 1.2s ease;
 }
 
-.chart-bar span {
-  font-size: 0.7rem;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  color: rgba(255, 255, 255, 0.75);
+.business-chart::before,
+.business-chart::after {
+  content: '';
+  position: absolute;
+  width: 140%;
+  height: 120%;
+  left: -20%;
+  top: -10%;
+  background: radial-gradient(circle, rgba(148, 118, 255, 0.3), transparent 60%);
+  opacity: 0.35;
+  animation: wave 8s ease-in-out infinite;
+}
+
+.business-chart::after {
+  background: radial-gradient(circle, rgba(86, 54, 210, 0.35), transparent 65%);
+  animation-delay: -4s;
+}
+
+.chart-area {
+  height: 180px;
+  position: relative;
+  z-index: 1;
 }
 
 .chart-metrics {
   display: grid;
   gap: 12px;
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  position: relative;
+  z-index: 1;
 }
 
 .chart-metrics strong {
   display: block;
   font-size: 1.2rem;
+  font-weight: 700;
 }
 
 .chart-metrics span {
@@ -867,6 +870,18 @@ img {
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+@keyframes wave {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+  50% {
+    transform: translateX(-6%) translateY(2%);
+  }
+  100% {
+    transform: translateX(0) translateY(0);
   }
 }
 
