@@ -8,15 +8,16 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { isApiError } from '@/lib/api';
-import { useI18n } from '@/providers/locale-provider';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function LoginPage() {
   const router = useRouter();
   const { signIn, status } = useAuth();
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -38,7 +39,7 @@ export default function LoginPage() {
       if (isApiError(submitError)) {
         setError(submitError.message);
       } else {
-        setError(t.auth.loginError);
+        setError(t('auth.loginError'));
       }
     } finally {
       setLoading(false);
@@ -49,42 +50,53 @@ export default function LoginPage() {
     <section className="auth-wrap reveal">
       <Card className="auth-card">
         <CardHeader>
-          <p className="eyebrow">{t.auth.loginEyebrow}</p>
-          <CardTitle>{t.auth.loginTitle}</CardTitle>
+          <p className="eyebrow">{t('auth.loginEyebrow')}</p>
+          <CardTitle>{t('auth.loginTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="form-grid" onSubmit={onSubmit}>
             <div className="grid gap-2">
-              <Label htmlFor="login-email">{t.auth.loginEmail}</Label>
+              <Label htmlFor="login-email">{t('auth.loginEmail')}</Label>
               <Input
                 id="login-email"
                 type="email"
-                placeholder={t.auth.loginPlaceholder}
+                placeholder={t('auth.loginPlaceholder')}
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="login-password">{t.auth.loginPassword}</Label>
-              <Input
-                id="login-password"
-                type="password"
-                placeholder={t.auth.passwordPlaceholder}
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
+              <Label htmlFor="login-password">{t('auth.loginPassword')}</Label>
+              <div className="password-field">
+                <Input
+                  id="login-password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder={t('auth.passwordPlaceholder')}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((value) => !value)}
+                >
+                  {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                </Button>
+              </div>
             </div>
 
             {error ? <p className="feedback error">{error}</p> : null}
 
             <Button type="submit" disabled={loading}>
-              {loading ? t.auth.loginLoading : t.auth.loginButton}
+              {loading ? t('auth.loginLoading') : t('auth.loginButton')}
             </Button>
           </form>
           <p className="muted mt-4">
-            {t.auth.loginFooter} <Link href="/signup">{t.auth.loginFooterLink}</Link>
+            {t('auth.loginFooter')} <Link href="/signup">{t('auth.loginFooterLink')}</Link>
           </p>
         </CardContent>
       </Card>

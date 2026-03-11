@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Space_Grotesk, Source_Sans_3 } from 'next/font/google';
 import { AppShell } from '@/components/app-shell';
 import { AuthProvider } from '@/providers/auth-provider';
-import { LocaleProvider } from '@/providers/locale-provider';
+import { I18nProvider } from '@/providers/i18n-provider';
 import './globals.css';
 import 'aos/dist/aos.css';
 
@@ -32,11 +32,11 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark">
       <body className={`${headingFont.variable} ${bodyFont.variable}`}>
-        <LocaleProvider>
+        <I18nProvider>
           <AuthProvider>
             <AppShell>{children}</AppShell>
           </AuthProvider>
-        </LocaleProvider>
+        </I18nProvider>
       </body>
     </html>
   );

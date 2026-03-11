@@ -7,18 +7,19 @@ import AOS from 'aos';
 import { FaGithub, FaInstagram, FaLinkedinIn, FaXTwitter } from 'react-icons/fa6';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { useI18n } from '@/providers/locale-provider';
+import { LanguageSwitcher } from '@/components/language-switcher';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/providers/auth-provider';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { status, user, logout } = useAuth();
-  const { t } = useI18n();
+  const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
 
   const navLinks = [
-    { href: '/', label: t.nav.home },
-    { href: '/dashboard', label: t.nav.dashboard },
+    { href: '/', label: t('nav.home') },
+    { href: '/dashboard', label: t('nav.dashboard') },
   ];
 
   const isAuthenticated = status === 'authenticated' && !!user;
@@ -43,9 +44,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setMenuOpen((value) => !value)}
             aria-expanded={menuOpen}
-            aria-label={t.nav.menu}
+            aria-label={t('nav.menu')}
           >
-            {t.nav.menu}
+            <span className="sr-only">{t('nav.menu')}</span>
+            <span className={`hamburger ${menuOpen ? 'open' : ''}`} aria-hidden="true" />
           </button>
 
           <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
@@ -64,19 +66,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
             {!isAuthenticated ? (
               <>
+                <LanguageSwitcher />
                 <Button variant="outline" size="sm" asChild>
                   <Link href="/login" onClick={() => setMenuOpen(false)}>
-                    {t.nav.login}
+                    {t('nav.login')}
                   </Link>
                 </Button>
                 <Button size="sm" asChild>
                   <Link href="/signup" onClick={() => setMenuOpen(false)}>
-                    {t.nav.signup}
+                    {t('nav.signup')}
                   </Link>
                 </Button>
               </>
             ) : (
               <>
+                <LanguageSwitcher />
                 <Badge variant="secondary" className="role-chip">
                   {user.role} - {user.fullName}
                 </Badge>
@@ -89,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     setMenuOpen(false);
                   }}
                 >
-                  {t.nav.logout}
+                  {t('nav.logout')}
                 </Button>
               </>
             )}
@@ -103,21 +107,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="container footer-grid">
           <div className="footer-brand">
             <p className="brand">AppointmentOS</p>
-            <p className="muted">{t.footer.tagline}</p>
+            <p className="muted">{t('footer.tagline')}</p>
             <p className="footer-mail">
               <a href="mailto:pasapera279@gmail.com">pasapera279@gmail.com</a>
             </p>
           </div>
 
           <div className="footer-col">
-            <p className="footer-title">{t.footer.product}</p>
-            <a href="/dashboard">{t.footer.dashboard}</a>
-            <a href="/login">{t.footer.login}</a>
-            <a href="/signup">{t.footer.signup}</a>
+            <p className="footer-title">{t('footer.product')}</p>
+            <a href="/dashboard">{t('footer.dashboard')}</a>
+            <a href="/login">{t('footer.login')}</a>
+            <a href="/signup">{t('footer.signup')}</a>
           </div>
 
           <div className="footer-col">
-            <p className="footer-title">{t.footer.social}</p>
+            <p className="footer-title">{t('footer.social')}</p>
             <div className="social-row">
               <a
                 href="https://www.linkedin.com/in/isaac-pasapera-navarro/"
@@ -149,7 +153,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
         <div className="container footer-bottom">
-          <p>{t.footer.copyright}</p>
+          <p>{t('footer.copyright')}</p>
         </div>
       </footer>
     </div>

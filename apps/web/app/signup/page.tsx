@@ -8,13 +8,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { isApiError } from '@/lib/api';
-import { useI18n } from '@/providers/locale-provider';
+import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function SignupPage() {
   const router = useRouter();
   const { signUp, status } = useAuth();
-  const { t } = useI18n();
+  const { t } = useTranslation();
 
   const [form, setForm] = useState({
     fullName: '',
@@ -22,6 +22,9 @@ export default function SignupPage() {
     password: '',
     timezone: 'UTC',
   });
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -36,6 +39,12 @@ export default function SignupPage() {
     setLoading(true);
     setError(null);
 
+    if (form.password !== confirmPassword) {
+      setError(t('auth.signupMismatch'));
+      setLoading(false);
+      return;
+    }
+
     try {
       await signUp({
         fullName: form.fullName.trim(),
@@ -48,7 +57,7 @@ export default function SignupPage() {
       if (isApiError(submitError)) {
         setError(submitError.message);
       } else {
-        setError(t.auth.signupError);
+        setError(t('auth.signupError'));
       }
     } finally {
       setLoading(false);
@@ -59,51 +68,85 @@ export default function SignupPage() {
     <section className="auth-wrap reveal">
       <Card className="auth-card">
         <CardHeader>
-          <p className="eyebrow">{t.auth.signupEyebrow}</p>
-          <CardTitle>{t.auth.signupTitle}</CardTitle>
+          <p className="eyebrow">{t('auth.signupEyebrow')}</p>
+          <CardTitle>{t('auth.signupTitle')}</CardTitle>
         </CardHeader>
         <CardContent>
           <form className="form-grid" onSubmit={onSubmit}>
             <div className="grid gap-2">
-              <Label htmlFor="signup-name">{t.auth.signupName}</Label>
+              <Label htmlFor="signup-name">{t('auth.signupName')}</Label>
               <Input
                 id="signup-name"
                 type="text"
-                placeholder={t.auth.signupNamePlaceholder}
+                placeholder={t('auth.signupNamePlaceholder')}
                 value={form.fullName}
                 onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="signup-email">{t.auth.signupEmail}</Label>
+              <Label htmlFor="signup-email">{t('auth.signupEmail')}</Label>
               <Input
                 id="signup-email"
                 type="email"
-                placeholder={t.auth.signupEmailPlaceholder}
+                placeholder={t('auth.signupEmailPlaceholder')}
                 value={form.email}
                 onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
                 required
               />
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="signup-password">{t.auth.signupPassword}</Label>
-              <Input
-                id="signup-password"
-                type="password"
-                minLength={8}
-                placeholder={t.auth.signupPasswordPlaceholder}
-                value={form.password}
-                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-                required
-              />
+              <Label htmlFor="signup-password">{t('auth.signupPassword')}</Label>
+              <div className="password-field">
+                <Input
+                  id="signup-password"
+                  type={showPassword ? 'text' : 'password'}
+                  minLength={8}
+                  placeholder={t('auth.signupPasswordPlaceholder')}
+                  value={form.password}
+                  onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="password-toggle"
+                  onClick={() => setShowPassword((value) => !value)}
+                >
+                  {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
+                </Button>
+              </div>
             </div>
             <div className="grid gap-2">
-              <Label htmlFor="signup-timezone">{t.auth.signupTimezone}</Label>
+              <Label htmlFor="signup-confirm">{t('auth.signupConfirm')}</Label>
+              <div className="password-field">
+                <Input
+                  id="signup-confirm"
+                  type={showConfirm ? 'text' : 'password'}
+                  minLength={8}
+                  placeholder={t('auth.signupConfirmPlaceholder')}
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  required
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="password-toggle"
+                  onClick={() => setShowConfirm((value) => !value)}
+                >
+                  {showConfirm ? t('auth.hidePassword') : t('auth.showPassword')}
+                </Button>
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="signup-timezone">{t('auth.signupTimezone')}</Label>
               <Input
                 id="signup-timezone"
                 type="text"
-                placeholder={t.auth.signupTimezonePlaceholder}
+                placeholder={t('auth.signupTimezonePlaceholder')}
                 value={form.timezone}
                 onChange={(event) => setForm((prev) => ({ ...prev, timezone: event.target.value }))}
               />
@@ -112,11 +155,11 @@ export default function SignupPage() {
             {error ? <p className="feedback error">{error}</p> : null}
 
             <Button type="submit" disabled={loading}>
-              {loading ? t.auth.signupLoading : t.auth.signupButton}
+              {loading ? t('auth.signupLoading') : t('auth.signupButton')}
             </Button>
           </form>
           <p className="muted mt-4">
-            {t.auth.signupFooter} <Link href="/login">{t.auth.signupFooterLink}</Link>
+            {t('auth.signupFooter')} <Link href="/login">{t('auth.signupFooterLink')}</Link>
           </p>
         </CardContent>
       </Card>
