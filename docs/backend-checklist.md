@@ -20,6 +20,13 @@
 - [x] Conflict validation for overlapping appointments
 - [x] DTO validation with `class-validator`
 
+## 3.5) Multi-tenant Core
+- [x] Tenant + membership models (`Tenant`, `TenantMember`)
+- [x] `tenantId` enforced in appointments/notifications
+- [x] JWT includes `tenantId` + `tenantRole`
+- [x] Tenant-scoped queries for users and appointments
+- [ ] Prisma-level tenant enforcement (middleware or policy layer)
+
 ## 4) Environments and Security Basics
 - [x] Real secrets isolated in `.env` files
 - [x] `.env` files ignored by git
@@ -70,5 +77,5 @@ npm run db:seed
 ```
 
 ## Notes
-- Current idempotency implementation uses in-memory cache keyed by `x-idempotency-key` + `userId`.
+- Current idempotency implementation uses in-memory cache keyed by `tenantId` + `userId` + `x-idempotency-key`.
 - For horizontal scaling, migrate idempotency storage to Redis/PostgreSQL unique key strategy.

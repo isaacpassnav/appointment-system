@@ -2,7 +2,9 @@ import type { Metadata } from 'next';
 import { Space_Grotesk, Source_Sans_3 } from 'next/font/google';
 import { AppShell } from '@/components/app-shell';
 import { AuthProvider } from '@/providers/auth-provider';
+import { LocaleProvider } from '@/providers/locale-provider';
 import './globals.css';
+import 'aos/dist/aos.css';
 
 const headingFont = Space_Grotesk({
   subsets: ['latin'],
@@ -28,11 +30,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <body className={`${headingFont.variable} ${bodyFont.variable}`}>
-        <AuthProvider>
-          <AppShell>{children}</AppShell>
-        </AuthProvider>
+        <LocaleProvider>
+          <AuthProvider>
+            <AppShell>{children}</AppShell>
+          </AuthProvider>
+        </LocaleProvider>
       </body>
     </html>
   );

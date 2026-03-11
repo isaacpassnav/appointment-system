@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Prisma, UserRole } from '@prisma/client';
+import { Prisma, TenantRole, UserRole } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -49,8 +49,38 @@ export class UsersService {
     }
   }
 
+  async createInTenant(tenantId: string, dto: CreateUserDto) {
+    const user = await this.create(dto);
+
+    await this.prisma.tenantMember.create({
+      data: {
+        tenantId,
+        userId: user.id,
+        role: TenantRole.CLIENT,
+        status: 'ACTIVE',
+      },
+    });
+
+    return user;
+  }
+
   findAll() {
     return this.prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+      select: userPublicSelect,
+    });
+  }
+
+  findAllForTenant(tenantId: string) {
+    return this.prisma.user.findMany({
+      where: {
+        memberships: {
+          some: {
+            tenantId,
+            status: 'ACTIVE',
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
       select: userPublicSelect,
     });
@@ -67,6 +97,27 @@ export class UsersService {
     return user;
   }
 
+  async findOneForTenant(tenantId: string, userId: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        id: userId,
+        memberships: {
+          some: {
+            tenantId,
+            status: 'ACTIVE',
+          },
+        },
+      },
+      select: userPublicSelect,
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    return user;
+  }
+
   findByEmail(email: string) {
     return this.prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
@@ -77,6 +128,92 @@ export class UsersService {
     return this.prisma.user.findUnique({
       where: { id: userId },
     });
+  }
+
+  listTenantMemberships(userId: string) {
+    return this.prisma.tenantMember.findMany({
+      where: { userId, status: 'ACTIVE' },
+      select: {
+        role: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            status: true,
+            resellerId: true,
+          },
+        },
+      },
+      orderBy: { createdAt: 'asc' },
+    });
+  }
+
+  findTenantMembership(userId: string, tenantId: string) {
+    return this.prisma.tenantMember.findFirst({
+      where: {
+        userId,
+        tenantId,
+        status: 'ACTIVE',
+      },
+      select: {
+        role: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            status: true,
+            resellerId: true,
+          },
+        },
+      },
+    });
+  }
+
+  findTenantById(tenantId: string) {
+    return this.prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        status: true,
+        resellerId: true,
+      },
+    });
+  }
+
+  findTenantBySlug(slug: string) {
+    return this.prisma.tenant.findUnique({
+      where: { slug },
+      select: { id: true, name: true, slug: true },
+    });
+  }
+
+  async ensureTenantForSignup(params: {
+    userId: string;
+    tenantName: string;
+    tenantSlug: string;
+    resellerId?: string;
+  }) {
+    const tenant = await this.prisma.tenant.create({
+      data: {
+        name: params.tenantName,
+        slug: params.tenantSlug,
+        resellerId: params.resellerId,
+        members: {
+          create: {
+            userId: params.userId,
+            role: TenantRole.BUSINESS_ADMIN,
+            status: 'ACTIVE',
+          },
+        },
+      },
+      select: { id: true, name: true, slug: true },
+    });
+
+    return tenant;
   }
 
   async setRefreshTokenHash(userId: string, refreshToken: string) {

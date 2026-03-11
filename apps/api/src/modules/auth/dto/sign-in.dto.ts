@@ -1,5 +1,5 @@
-import { IsEmail, IsString, MaxLength, MinLength } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEmail, IsOptional, IsString, IsUUID, MaxLength, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class SignInDto {
   @ApiProperty({ example: 'isaac@example.com' })
@@ -11,4 +11,12 @@ export class SignInDto {
   @MinLength(8)
   @MaxLength(72)
   password!: string;
+
+  @ApiPropertyOptional({
+    description: 'Tenant context to authenticate against',
+    example: 'e3f4c5d6-7a89-4bcd-9e01-234567890abc',
+  })
+  @IsOptional()
+  @IsUUID()
+  tenantId?: string;
 }

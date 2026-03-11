@@ -3,12 +3,18 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { isApiError } from '@/lib/api';
+import { useI18n } from '@/providers/locale-provider';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function SignupPage() {
   const router = useRouter();
   const { signUp, status } = useAuth();
+  const { t } = useI18n();
 
   const [form, setForm] = useState({
     fullName: '',
@@ -42,7 +48,7 @@ export default function SignupPage() {
       if (isApiError(submitError)) {
         setError(submitError.message);
       } else {
-        setError('Signup failed. Verify your data and retry.');
+        setError(t.auth.signupError);
       }
     } finally {
       setLoading(false);
@@ -51,61 +57,69 @@ export default function SignupPage() {
 
   return (
     <section className="auth-wrap reveal">
-      <article className="card auth-card">
-        <p className="eyebrow">Start now</p>
-        <h1>Create your account</h1>
-        <form className="form-grid" onSubmit={onSubmit}>
-          <label className="field">
-            <span>Full name</span>
-            <input
-              type="text"
-              placeholder="Isaac Pasapera"
-              value={form.fullName}
-              onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Email</span>
-            <input
-              type="email"
-              placeholder="owner@company.com"
-              value={form.email}
-              onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Password</span>
-            <input
-              type="password"
-              minLength={8}
-              placeholder="At least 8 characters"
-              value={form.password}
-              onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Timezone</span>
-            <input
-              type="text"
-              placeholder="UTC"
-              value={form.timezone}
-              onChange={(event) => setForm((prev) => ({ ...prev, timezone: event.target.value }))}
-            />
-          </label>
+      <Card className="auth-card">
+        <CardHeader>
+          <p className="eyebrow">{t.auth.signupEyebrow}</p>
+          <CardTitle>{t.auth.signupTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form className="form-grid" onSubmit={onSubmit}>
+            <div className="grid gap-2">
+              <Label htmlFor="signup-name">{t.auth.signupName}</Label>
+              <Input
+                id="signup-name"
+                type="text"
+                placeholder={t.auth.signupNamePlaceholder}
+                value={form.fullName}
+                onChange={(event) => setForm((prev) => ({ ...prev, fullName: event.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="signup-email">{t.auth.signupEmail}</Label>
+              <Input
+                id="signup-email"
+                type="email"
+                placeholder={t.auth.signupEmailPlaceholder}
+                value={form.email}
+                onChange={(event) => setForm((prev) => ({ ...prev, email: event.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="signup-password">{t.auth.signupPassword}</Label>
+              <Input
+                id="signup-password"
+                type="password"
+                minLength={8}
+                placeholder={t.auth.signupPasswordPlaceholder}
+                value={form.password}
+                onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="signup-timezone">{t.auth.signupTimezone}</Label>
+              <Input
+                id="signup-timezone"
+                type="text"
+                placeholder={t.auth.signupTimezonePlaceholder}
+                value={form.timezone}
+                onChange={(event) => setForm((prev) => ({ ...prev, timezone: event.target.value }))}
+              />
+            </div>
 
-          {error ? <p className="feedback error">{error}</p> : null}
+            {error ? <p className="feedback error">{error}</p> : null}
 
-          <button className="button button-primary" type="submit" disabled={loading}>
-            {loading ? 'Creating account...' : 'Create account'}
-          </button>
-        </form>
-        <p className="muted">
-          Already have an account? <Link href="/login">Log in</Link>
-        </p>
-      </article>
+            <Button type="submit" disabled={loading}>
+              {loading ? t.auth.signupLoading : t.auth.signupButton}
+            </Button>
+          </form>
+          <p className="muted mt-4">
+            {t.auth.signupFooter} <Link href="/login">{t.auth.signupFooterLink}</Link>
+          </p>
+        </CardContent>
+      </Card>
     </section>
   );
 }

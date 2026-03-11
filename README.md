@@ -93,6 +93,8 @@ Entregar una primera version estable que permita:
 - Endpoints de citas (`create/list/findOne/cancel`) operativos con validacion de conflictos.
 - Rate limiting por categoria de ruta (`auth`, `public`, `private`) activo.
 - Idempotencia para crear cita via `x-idempotency-key` (cache en memoria, MVP).
+- Multi-tenant core listo (modelos `Tenant/TenantMember`, JWT con `tenantId` y queries scoping).
+- Pendiente hardening: enforcement global de `tenantId` via middleware Prisma.
 - Swagger disponible en `/api/docs` con contratos request actualizados.
 - Seed de datos demo disponible para acelerar integracion frontend.
 

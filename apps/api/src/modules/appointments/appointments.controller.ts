@@ -43,13 +43,18 @@ export class AppointmentsController {
     @Body() dto: CreateAppointmentDto,
     @Headers('x-idempotency-key') idempotencyKey?: string,
   ) {
-    return this.appointmentsService.create(user.sub, dto, idempotencyKey);
+    return this.appointmentsService.create(
+      user.sub,
+      user.tenantId,
+      dto,
+      idempotencyKey,
+    );
   }
 
   @ApiOperation({ summary: 'List current user appointments' })
   @Get()
   findAll(@CurrentUser() user: JwtPayload) {
-    return this.appointmentsService.findAll(user.sub);
+    return this.appointmentsService.findAll(user.sub, user.tenantId);
   }
 
   @ApiOperation({ summary: 'Get a single appointment by id' })
@@ -58,7 +63,7 @@ export class AppointmentsController {
     @CurrentUser() user: JwtPayload,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    return this.appointmentsService.findOne(user.sub, id);
+    return this.appointmentsService.findOne(user.sub, user.tenantId, id);
   }
 
   @ApiOperation({ summary: 'Cancel an appointment by id' })
@@ -67,6 +72,6 @@ export class AppointmentsController {
     @CurrentUser() user: JwtPayload,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    return this.appointmentsService.cancel(user.sub, id);
+    return this.appointmentsService.cancel(user.sub, user.tenantId, id);
   }
 }

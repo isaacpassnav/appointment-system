@@ -2,9 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { config as dotenvConfig } from 'dotenv';
 import bcrypt from 'bcrypt';
+import { PrismaPg } from '@prisma/adapter-pg';
 import {
   AppointmentStatus,
   PrismaClient,
+  TenantRole,
   UserRole,
 } from '@prisma/client';
 
@@ -25,7 +27,13 @@ function loadEnvFiles() {
 async function run() {
   loadEnvFiles();
 
-  const prisma = new PrismaClient();
+  if (!process.env.DATABASE_URL) {
+    console.error('Error: DATABASE_URL is not set in environment variables.');
+    process.exit(1);
+  }
+
+  const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+  const prisma = new PrismaClient({ adapter });
   const email =
     process.env.SEED_USER_EMAIL?.trim().toLowerCase() ??
     'demo.client@appointment.local';
@@ -33,6 +41,10 @@ async function run() {
   const fullName = process.env.SEED_USER_NAME ?? 'Demo Client';
   const timezone = process.env.SEED_USER_TIMEZONE ?? 'UTC';
   const passwordHash = await bcrypt.hash(password, 10);
+  const tenantName =
+    process.env.SEED_TENANT_NAME ?? 'Default Tenant';
+  const tenantSlug =
+    process.env.SEED_TENANT_SLUG ?? 'default-tenant';
 
   try {
     const user = await prisma.user.upsert({
@@ -52,8 +64,41 @@ async function run() {
       select: { id: true, email: true },
     });
 
+    const tenant = await prisma.tenant.upsert({
+      where: { slug: tenantSlug },
+      create: {
+        name: tenantName,
+        slug: tenantSlug,
+        status: 'ACTIVE',
+      },
+      update: {
+        name: tenantName,
+      },
+      select: { id: true, slug: true },
+    });
+
+    await prisma.tenantMember.upsert({
+      where: {
+        tenantId_userId: {
+          tenantId: tenant.id,
+          userId: user.id,
+        },
+      },
+      create: {
+        tenantId: tenant.id,
+        userId: user.id,
+        role: TenantRole.BUSINESS_ADMIN,
+        status: 'ACTIVE',
+      },
+      update: {
+        role: TenantRole.BUSINESS_ADMIN,
+        status: 'ACTIVE',
+      },
+    });
+
     const existingSeedAppointments = await prisma.appointment.count({
       where: {
+        tenantId: tenant.id,
         userId: user.id,
         notes: {
           startsWith: '[seed]',
@@ -70,6 +115,7 @@ async function run() {
         const endsAt = new Date(startsAt.getTime() + 30 * 60_000);
 
         return {
+          tenantId: tenant.id,
           userId: user.id,
           startsAt,
           endsAt,

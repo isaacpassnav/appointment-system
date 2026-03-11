@@ -3,12 +3,18 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { isApiError } from '@/lib/api';
+import { useI18n } from '@/providers/locale-provider';
 import { useAuth } from '@/providers/auth-provider';
 
 export default function LoginPage() {
   const router = useRouter();
   const { signIn, status } = useAuth();
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -32,7 +38,7 @@ export default function LoginPage() {
       if (isApiError(submitError)) {
         setError(submitError.message);
       } else {
-        setError('Login failed. Try again.');
+        setError(t.auth.loginError);
       }
     } finally {
       setLoading(false);
@@ -41,41 +47,47 @@ export default function LoginPage() {
 
   return (
     <section className="auth-wrap reveal">
-      <article className="card auth-card">
-        <p className="eyebrow">Welcome back</p>
-        <h1>Log in to your workspace</h1>
-        <form className="form-grid" onSubmit={onSubmit}>
-          <label className="field">
-            <span>Email</span>
-            <input
-              type="email"
-              placeholder="owner@company.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-          </label>
-          <label className="field">
-            <span>Password</span>
-            <input
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-            />
-          </label>
+      <Card className="auth-card">
+        <CardHeader>
+          <p className="eyebrow">{t.auth.loginEyebrow}</p>
+          <CardTitle>{t.auth.loginTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form className="form-grid" onSubmit={onSubmit}>
+            <div className="grid gap-2">
+              <Label htmlFor="login-email">{t.auth.loginEmail}</Label>
+              <Input
+                id="login-email"
+                type="email"
+                placeholder={t.auth.loginPlaceholder}
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="login-password">{t.auth.loginPassword}</Label>
+              <Input
+                id="login-password"
+                type="password"
+                placeholder={t.auth.passwordPlaceholder}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+              />
+            </div>
 
-          {error ? <p className="feedback error">{error}</p> : null}
+            {error ? <p className="feedback error">{error}</p> : null}
 
-          <button className="button button-primary" type="submit" disabled={loading}>
-            {loading ? 'Signing in...' : 'Log in'}
-          </button>
-        </form>
-        <p className="muted">
-          New here? <Link href="/signup">Create your account</Link>
-        </p>
-      </article>
+            <Button type="submit" disabled={loading}>
+              {loading ? t.auth.loginLoading : t.auth.loginButton}
+            </Button>
+          </form>
+          <p className="muted mt-4">
+            {t.auth.loginFooter} <Link href="/signup">{t.auth.loginFooterLink}</Link>
+          </p>
+        </CardContent>
+      </Card>
     </section>
   );
 }

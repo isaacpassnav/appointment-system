@@ -2,25 +2,36 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import AOS from 'aos';
+import { FaGithub, FaInstagram, FaLinkedinIn, FaXTwitter } from 'react-icons/fa6';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useI18n } from '@/providers/locale-provider';
 import { useAuth } from '@/providers/auth-provider';
-
-const navLinks = [
-  { href: '/', label: 'Home' },
-  { href: '/dashboard', label: 'Dashboard' },
-];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { status, user, logout } = useAuth();
+  const { t } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
 
+  const navLinks = [
+    { href: '/', label: t.nav.home },
+    { href: '/dashboard', label: t.nav.dashboard },
+  ];
+
   const isAuthenticated = status === 'authenticated' && !!user;
+
+  useEffect(() => {
+    AOS.init({ once: true, duration: 700, easing: 'ease-out-cubic', offset: 80 });
+  }, []);
 
   return (
     <div className="site-wrapper">
       <div className="bg-glow bg-glow-top" />
       <div className="bg-glow bg-glow-side" />
+      <div className="bg-grid" />
       <header className="topbar">
         <div className="container topbar-inner">
           <Link href="/" className="brand">
@@ -32,9 +43,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={() => setMenuOpen((value) => !value)}
             aria-expanded={menuOpen}
-            aria-label="Toggle navigation"
+            aria-label={t.nav.menu}
           >
-            Menu
+            {t.nav.menu}
           </button>
 
           <nav className={`nav-links ${menuOpen ? 'open' : ''}`}>
@@ -53,28 +64,33 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             })}
             {!isAuthenticated ? (
               <>
-                <Link href="/login" className="button button-ghost" onClick={() => setMenuOpen(false)}>
-                  Log in
-                </Link>
-                <Link href="/signup" className="button button-primary" onClick={() => setMenuOpen(false)}>
-                  Start free
-                </Link>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/login" onClick={() => setMenuOpen(false)}>
+                    {t.nav.login}
+                  </Link>
+                </Button>
+                <Button size="sm" asChild>
+                  <Link href="/signup" onClick={() => setMenuOpen(false)}>
+                    {t.nav.signup}
+                  </Link>
+                </Button>
               </>
             ) : (
               <>
-                <span className="role-chip">
-                  {user.role} · {user.fullName}
-                </span>
-                <button
-                  className="button button-ghost"
+                <Badge variant="secondary" className="role-chip">
+                  {user.role} - {user.fullName}
+                </Badge>
+                <Button
+                  variant="ghost"
+                  size="sm"
                   type="button"
                   onClick={() => {
                     void logout();
                     setMenuOpen(false);
                   }}
                 >
-                  Log out
-                </button>
+                  {t.nav.logout}
+                </Button>
               </>
             )}
           </nav>
@@ -82,6 +98,60 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="container page-content">{children}</main>
+
+      <footer className="footer" data-aos="fade-up">
+        <div className="container footer-grid">
+          <div className="footer-brand">
+            <p className="brand">AppointmentOS</p>
+            <p className="muted">{t.footer.tagline}</p>
+            <p className="footer-mail">
+              <a href="mailto:pasapera279@gmail.com">pasapera279@gmail.com</a>
+            </p>
+          </div>
+
+          <div className="footer-col">
+            <p className="footer-title">{t.footer.product}</p>
+            <a href="/dashboard">{t.footer.dashboard}</a>
+            <a href="/login">{t.footer.login}</a>
+            <a href="/signup">{t.footer.signup}</a>
+          </div>
+
+          <div className="footer-col">
+            <p className="footer-title">{t.footer.social}</p>
+            <div className="social-row">
+              <a
+                href="https://www.linkedin.com/in/isaac-pasapera-navarro/"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="LinkedIn"
+              >
+                <FaLinkedinIn aria-hidden="true" />
+                <span className="sr-only">LinkedIn</span>
+              </a>
+              <a href="https://github.com/isaacpassnav" target="_blank" rel="noreferrer" aria-label="GitHub">
+                <FaGithub aria-hidden="true" />
+                <span className="sr-only">GitHub</span>
+              </a>
+              <a
+                href="https://www.instagram.com/isaacpasapera/"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Instagram"
+              >
+                <FaInstagram aria-hidden="true" />
+                <span className="sr-only">Instagram</span>
+              </a>
+              <a href="https://x.com/IsaacPasapera" target="_blank" rel="noreferrer" aria-label="X">
+                <FaXTwitter aria-hidden="true" />
+                <span className="sr-only">X</span>
+              </a>
+            </div>
+          </div>
+        </div>
+        <div className="container footer-bottom">
+          <p>{t.footer.copyright}</p>
+        </div>
+      </footer>
     </div>
   );
 }

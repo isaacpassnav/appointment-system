@@ -32,9 +32,28 @@ enum NotificationStatus {
 }
 
 enum UserRole {
+  SUPERADMIN
+  RESELLER
   ADMIN
   STAFF
   CLIENT
+}
+
+enum TenantRole {
+  BUSINESS_ADMIN
+  STAFF
+  CLIENT
+}
+
+enum TenantStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum TenantMemberStatus {
+  ACTIVE
+  INVITED
+  SUSPENDED
 }
 
 model User {
@@ -49,10 +68,45 @@ model User {
   createdAt        DateTime      @default(now())
   updatedAt        DateTime      @updatedAt
   appointments     Appointment[]
+  memberships      TenantMember[]
+  resellerTenants  Tenant[]      @relation("ResellerTenants")
+}
+
+model Tenant {
+  id          String        @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String        @unique
+  status      TenantStatus @default(ACTIVE)
+  resellerId  String?       @db.Uuid
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  reseller    User?         @relation("ResellerTenants", fields: [resellerId], references: [id], onDelete: SetNull)
+  members     TenantMember[]
+  appointments Appointment[]
+  notifications NotificationLog[]
+
+  @@index([resellerId])
+}
+
+model TenantMember {
+  id        String             @id @default(uuid()) @db.Uuid
+  tenantId  String             @db.Uuid
+  userId    String             @db.Uuid
+  role      TenantRole
+  status    TenantMemberStatus @default(ACTIVE)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  tenant    Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@index([userId, tenantId])
+  @@index([tenantId, role])
 }
 
 model Appointment {
   id                      String            @id @default(uuid()) @db.Uuid
+  tenantId                String            @db.Uuid
   userId                  String            @db.Uuid
   startsAt                DateTime
   endsAt                  DateTime
@@ -62,16 +116,19 @@ model Appointment {
   cancelledAt             DateTime?
   createdAt               DateTime          @default(now())
   updatedAt               DateTime          @updatedAt
+  tenant                  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user                    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   notifications           NotificationLog[]
 
+  @@index([tenantId, startsAt])
+  @@index([tenantId, status])
   @@index([userId, startsAt])
   @@index([startsAt, endsAt])
-  @@index([status])
 }
 
 model NotificationLog {
   id                String             @id @default(uuid()) @db.Uuid
+  tenantId          String             @db.Uuid
   appointmentId     String             @db.Uuid
   channel           NotificationChannel
   status            NotificationStatus @default(QUEUED)
@@ -80,7 +137,9 @@ model NotificationLog {
   errorMessage      String?
   sentAt            DateTime?
   createdAt         DateTime           @default(now())
+  tenant            Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   appointment       Appointment        @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
 
   @@index([appointmentId, status])
+  @@index([tenantId, status])
 }

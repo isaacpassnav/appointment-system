@@ -18,6 +18,7 @@ export class AppointmentsService {
 
   async create(
     userId: string,
+    tenantId: string,
     dto: CreateAppointmentDto,
     idempotencyKey?: string,
   ) {
@@ -37,13 +38,13 @@ export class AppointmentsService {
 
     const safeIdempotencyKey = this.normalizeIdempotencyKey(idempotencyKey);
     const cacheKey = safeIdempotencyKey
-      ? this.buildCacheKey(userId, safeIdempotencyKey)
+      ? this.buildCacheKey(tenantId, userId, safeIdempotencyKey)
       : null;
 
     if (cacheKey) {
       const cachedAppointmentId = this.idempotencyCache.find(cacheKey);
       if (cachedAppointmentId) {
-        return this.findOne(userId, cachedAppointmentId);
+        return this.findOne(userId, tenantId, cachedAppointmentId);
       }
     }
 
@@ -51,6 +52,7 @@ export class AppointmentsService {
 
     const conflict = await this.prisma.appointment.findFirst({
       where: {
+        tenantId,
         userId,
         status: {
           in: [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED],
@@ -67,6 +69,7 @@ export class AppointmentsService {
 
     const appointment = await this.prisma.appointment.create({
       data: {
+        tenantId,
         userId,
         startsAt,
         endsAt,
@@ -81,14 +84,14 @@ export class AppointmentsService {
     return appointment;
   }
 
-  findAll(userId: string) {
+  findAll(userId: string, tenantId: string) {
     return this.prisma.appointment.findMany({
-      where: { userId },
+      where: { userId, tenantId },
       orderBy: { startsAt: 'asc' },
     });
   }
 
-  async findOne(userId: string, id: string) {
+  async findOne(userId: string, tenantId: string, id: string) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
     });
@@ -96,15 +99,15 @@ export class AppointmentsService {
     if (!appointment) {
       throw new NotFoundException('Appointment not found.');
     }
-    if (appointment.userId !== userId) {
+    if (appointment.userId !== userId || appointment.tenantId !== tenantId) {
       throw new NotFoundException('Appointment not found.');
     }
 
     return appointment;
   }
 
-  async cancel(userId: string, id: string) {
-    await this.findOne(userId, id);
+  async cancel(userId: string, tenantId: string, id: string) {
+    await this.findOne(userId, tenantId, id);
 
     return this.prisma.appointment.update({
       where: { id },
@@ -134,7 +137,11 @@ export class AppointmentsService {
     return normalized;
   }
 
-  private buildCacheKey(userId: string, idempotencyKey: string): string {
-    return `${userId}:${idempotencyKey}`;
+  private buildCacheKey(
+    tenantId: string,
+    userId: string,
+    idempotencyKey: string,
+  ): string {
+    return `${tenantId}:${userId}:${idempotencyKey}`;
   }
 }

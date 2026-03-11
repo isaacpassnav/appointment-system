@@ -2,6 +2,11 @@
 
 import Link from 'next/link';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   cancelAppointment,
   createAppointment,
@@ -9,6 +14,7 @@ import {
   listAppointments,
 } from '@/lib/api';
 import type { Appointment } from '@/lib/types';
+import { useI18n } from '@/providers/locale-provider';
 import { useAuth } from '@/providers/auth-provider';
 
 function formatDate(value: string) {
@@ -21,8 +27,20 @@ function formatDate(value: string) {
   });
 }
 
+function statusClass(status: Appointment['status']) {
+  switch (status) {
+    case 'CONFIRMED':
+      return 'bg-emerald-400/15 text-emerald-200 border-emerald-400/30';
+    case 'CANCELLED':
+      return 'bg-rose-500/15 text-rose-200 border-rose-500/30';
+    default:
+      return 'bg-primary/15 text-primary border-primary/30';
+  }
+}
+
 export default function DashboardPage() {
   const { status, user, withAccessToken } = useAuth();
+  const { t } = useI18n();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -60,7 +78,7 @@ export default function DashboardPage() {
         if (isApiError(loadError)) {
           setError(loadError.message);
         } else {
-          setError('Could not load appointments.');
+          setError(t.dashboard.errorLoad);
         }
       } finally {
         setLoading(false);
@@ -68,12 +86,12 @@ export default function DashboardPage() {
     };
 
     void load();
-  }, [status, withAccessToken]);
+  }, [status, withAccessToken, t.dashboard.errorLoad]);
 
   const onCreate = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!form.startsAt) {
-      setError('Pick a start date and time.');
+      setError(t.dashboard.errorMissingStart);
       return;
     }
 
@@ -94,7 +112,7 @@ export default function DashboardPage() {
       if (isApiError(submitError)) {
         setError(submitError.message);
       } else {
-        setError('Appointment could not be created.');
+        setError(t.dashboard.errorCreate);
       }
     } finally {
       setSubmitting(false);
@@ -114,148 +132,164 @@ export default function DashboardPage() {
       if (isApiError(cancelError)) {
         setError(cancelError.message);
       } else {
-        setError('Could not cancel this appointment.');
+        setError(t.dashboard.errorCancel);
       }
     }
   };
 
   if (status === 'loading') {
-    return <p className="muted">Preparing your workspace...</p>;
+    return <p className="muted">{t.dashboard.loading}</p>;
   }
 
   if (status === 'unauthenticated' || !user) {
     return (
-      <section className="card reveal">
-        <h1>You are not logged in</h1>
-        <p className="muted">Sign in first to manage appointments and view your tenant workspace.</p>
-        <div className="hero-actions">
-          <Link href="/login" className="button button-primary">
-            Log in
-          </Link>
-          <Link href="/signup" className="button button-ghost">
-            Create account
-          </Link>
-        </div>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.dashboard.unauthTitle}</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="muted">{t.dashboard.unauthBody}</p>
+          <div className="hero-actions">
+            <Button asChild>
+              <Link href="/login">{t.dashboard.unauthPrimary}</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/signup">{t.dashboard.unauthSecondary}</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
-    <section className="space-y-8">
+    <section className="stack">
       <header className="dashboard-head reveal">
         <div>
-          <p className="eyebrow">Workspace</p>
+          <p className="eyebrow">{t.dashboard.workspace}</p>
           <h1>{user.fullName}</h1>
           <p className="muted">
-            Role: {user.role} · Timezone: {user.timezone}
+            {t.dashboard.roleTimezone
+              .replace('{role}', user.role)
+              .replace('{timezone}', user.timezone)}
           </p>
         </div>
         <div className="stat-pill">
           <strong>{upcomingCount}</strong>
-          <span>Upcoming appointments</span>
+          <span>{t.dashboard.upcoming}</span>
         </div>
       </header>
 
       <div className="dashboard-grid">
-        <article className="card reveal">
-          <h2>Create appointment</h2>
-          <form className="form-grid compact" onSubmit={onCreate}>
-            <label className="field">
-              <span>Date and time</span>
-              <input
-                type="datetime-local"
-                value={form.startsAt}
-                onChange={(event) => setForm((prev) => ({ ...prev, startsAt: event.target.value }))}
-                required
-              />
-            </label>
-            <label className="field">
-              <span>Duration (minutes)</span>
-              <input
-                type="number"
-                min={15}
-                max={720}
-                step={15}
-                value={form.durationMinutes}
-                onChange={(event) =>
-                  setForm((prev) => ({
-                    ...prev,
-                    durationMinutes: Number(event.target.value),
-                  }))
-                }
-                required
-              />
-            </label>
-            <label className="field">
-              <span>Notes</span>
-              <textarea
-                rows={3}
-                placeholder="Consultation topic, details, prep notes..."
-                value={form.notes}
-                onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-              />
-            </label>
-            <button className="button button-primary" type="submit" disabled={submitting}>
-              {submitting ? 'Creating...' : 'Create appointment'}
-            </button>
-          </form>
-        </article>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.dashboard.createTitle}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form className="form-grid compact" onSubmit={onCreate}>
+              <div className="grid gap-2">
+                <Label htmlFor="appointment-start">{t.dashboard.dateTime}</Label>
+                <Input
+                  id="appointment-start"
+                  type="datetime-local"
+                  value={form.startsAt}
+                  onChange={(event) => setForm((prev) => ({ ...prev, startsAt: event.target.value }))}
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="appointment-duration">{t.dashboard.duration}</Label>
+                <Input
+                  id="appointment-duration"
+                  type="number"
+                  min={15}
+                  max={720}
+                  step={15}
+                  value={form.durationMinutes}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      durationMinutes: Number(event.target.value),
+                    }))
+                  }
+                  required
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="appointment-notes">{t.dashboard.notes}</Label>
+                <textarea
+                  id="appointment-notes"
+                  rows={3}
+                  className="w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                  placeholder={t.dashboard.notesPlaceholder}
+                  value={form.notes}
+                  onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
+                />
+              </div>
+              <Button type="submit" disabled={submitting}>
+                {submitting ? t.dashboard.creating : t.dashboard.createButton}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-        <article className="card reveal">
-          <h2>Tenant strategy snapshot</h2>
-          <p className="muted">
-            Next phase for your reseller model. This UI is prepared to display tenant quotas and
-            subaccounts.
-          </p>
-          <ul className="tenant-list">
-            <li>
-              <strong>Owner</strong>
-              <span>Manages plans, reseller allocations and global limits.</span>
-            </li>
-            <li>
-              <strong>Reseller</strong>
-              <span>Creates child clients with monthly quota constraints.</span>
-            </li>
-            <li>
-              <strong>Client</strong>
-              <span>Operates appointments within assigned plan limits.</span>
-            </li>
-          </ul>
-        </article>
+        <Card>
+          <CardHeader>
+            <CardTitle>{t.dashboard.tenantTitle}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="muted">{t.dashboard.tenantBody}</p>
+            <ul className="tenant-list">
+              <li>
+                <strong>{t.dashboard.tenantOwner}</strong>
+                <span>{t.dashboard.tenantOwnerBody}</span>
+              </li>
+              <li>
+                <strong>{t.dashboard.tenantReseller}</strong>
+                <span>{t.dashboard.tenantResellerBody}</span>
+              </li>
+              <li>
+                <strong>{t.dashboard.tenantClient}</strong>
+                <span>{t.dashboard.tenantClientBody}</span>
+              </li>
+            </ul>
+          </CardContent>
+        </Card>
       </div>
 
-      <article className="card reveal">
-        <h2>Appointments</h2>
-        {error ? <p className="feedback error">{error}</p> : null}
-        {loading ? <p className="muted">Loading appointments...</p> : null}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t.dashboard.appointmentsTitle}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error ? <p className="feedback error">{error}</p> : null}
+          {loading ? <p className="muted">{t.dashboard.loadingAppointments}</p> : null}
 
-        {!loading && appointments.length === 0 ? (
-          <p className="muted">No appointments yet. Create your first one above.</p>
-        ) : (
-          <div className="appointments-grid">
-            {appointments.map((item) => (
-              <article key={item.id} className="appointment-item">
-                <div>
-                  <p className="appointment-date">{formatDate(item.startsAt)}</p>
-                  <p className="appointment-meta">
-                    Ends {formatDate(item.endsAt)} · <span className={`status ${item.status.toLowerCase()}`}>{item.status}</span>
-                  </p>
-                  {item.notes ? <p className="appointment-notes">{item.notes}</p> : null}
-                </div>
-                {item.status !== 'CANCELLED' ? (
-                  <button
-                    type="button"
-                    className="button button-ghost"
-                    onClick={() => void onCancel(item.id)}
-                  >
-                    Cancel
-                  </button>
-                ) : null}
-              </article>
-            ))}
-          </div>
-        )}
-      </article>
+          {!loading && appointments.length === 0 ? (
+            <p className="muted">{t.dashboard.emptyAppointments}</p>
+          ) : (
+            <div className="appointments-grid">
+              {appointments.map((item) => (
+                <article key={item.id} className="appointment-item">
+                  <div>
+                    <p className="appointment-date">{formatDate(item.startsAt)}</p>
+                    <p className="appointment-meta">
+                      {t.dashboard.ends} {formatDate(item.endsAt)}{' '}
+                      <Badge className={statusClass(item.status)}>{item.status}</Badge>
+                    </p>
+                    {item.notes ? <p className="appointment-notes">{item.notes}</p> : null}
+                  </div>
+                  {item.status !== 'CANCELLED' ? (
+                    <Button variant="outline" size="sm" onClick={() => void onCancel(item.id)}>
+                      {t.dashboard.cancel}
+                    </Button>
+                  ) : null}
+                </article>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </section>
   );
 }
