@@ -745,6 +745,10 @@ img {
 }
 
 .appointment-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
   color: hsl(var(--muted-foreground));
   font-size: 0.9rem;
 }

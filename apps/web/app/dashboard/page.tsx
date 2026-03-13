@@ -274,10 +274,12 @@ export default function DashboardPage() {
                 <article key={item.id} className="appointment-item">
                   <div>
                     <p className="appointment-date">{formatDate(item.startsAt)}</p>
-                    <p className="appointment-meta">
-                      {t('dashboard.ends')} {formatDate(item.endsAt)}{' '}
+                    <div className="appointment-meta">
+                      <span>
+                        {t('dashboard.ends')} {formatDate(item.endsAt)}{' '}
+                      </span>
                       <Badge className={statusClass(item.status)}>{item.status}</Badge>
-                    </p>
+                    </div>
                     {item.notes ? <p className="appointment-notes">{item.notes}</p> : null}
                   </div>
                   {item.status !== 'CANCELLED' ? (

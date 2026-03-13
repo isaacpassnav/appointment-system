@@ -1,6 +1,6 @@
 {
   "name": "appointment-system",
-  "version": "1.0.0",
+  "version": "1.0.0", 
   "description": "Este proyecto se rehace desde cero en un nuevo repositorio para construir una base robusta y escalable.",
   "main": "index.js",
   "scripts": {
@@ -17,7 +17,7 @@
     "db:studio": "npm run prisma:studio -w apps/api",
     "db:migrate": "npm run prisma:migrate -w apps/api",
     "db:generate": "npm run prisma:generate -w apps/api",
-    "db:seed": "npm run db:seed -w apps/api",
+    "db:seed": "npm run db:seed -w apps/api", 
     "db:migrate:dev": "npm run prisma:migrate:dev -w apps/api",
     "db:migrate:deploy": "npm run prisma:migrate:deploy -w apps/api"
   },
