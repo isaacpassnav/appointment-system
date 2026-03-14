@@ -24,11 +24,24 @@ function buildTargetUrl(request: NextRequest, pathSegments: string[]) {
   return targetUrl;
 }
 
-async function proxyRequest(
-  request: NextRequest,
-  context: { params: { path: string[] } },
+type RouteContext = {
+  params?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function normalizePathSegments(
+  params?: Record<string, string | string[] | undefined>,
 ) {
-  const targetUrl = buildTargetUrl(request, context.params.path);
+  const raw = params?.path;
+  if (!raw) {
+    return [];
+  }
+  return Array.isArray(raw) ? raw : [raw];
+}
+
+async function proxyRequest(request: NextRequest, context: RouteContext) {
+  const params = await context.params;
+  const pathSegments = normalizePathSegments(params);
+  const targetUrl = buildTargetUrl(request, pathSegments);
   const headers = new Headers(request.headers);
 
   headers.delete('host');
@@ -53,44 +66,26 @@ async function proxyRequest(
   });
 }
 
-export async function GET(
-  request: NextRequest,
-  context: { params: { path: string[] } },
-) {
+export async function GET(request: NextRequest, context: RouteContext) {
   return proxyRequest(request, context);
 }
 
-export async function POST(
-  request: NextRequest,
-  context: { params: { path: string[] } },
-) {
+export async function POST(request: NextRequest, context: RouteContext) {
   return proxyRequest(request, context);
 }
 
-export async function PUT(
-  request: NextRequest,
-  context: { params: { path: string[] } },
-) {
+export async function PUT(request: NextRequest, context: RouteContext) {
   return proxyRequest(request, context);
 }
 
-export async function PATCH(
-  request: NextRequest,
-  context: { params: { path: string[] } },
-) {
+export async function PATCH(request: NextRequest, context: RouteContext) {
   return proxyRequest(request, context);
 }
 
-export async function DELETE(
-  request: NextRequest,
-  context: { params: { path: string[] } },
-) {
+export async function DELETE(request: NextRequest, context: RouteContext) {
   return proxyRequest(request, context);
 }
 
-export async function OPTIONS(
-  request: NextRequest,
-  context: { params: { path: string[] } },
-) {
+export async function OPTIONS(request: NextRequest, context: RouteContext) {
   return proxyRequest(request, context);
 }
