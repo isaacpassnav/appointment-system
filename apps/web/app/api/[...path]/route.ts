@@ -25,13 +25,11 @@ function buildTargetUrl(request: NextRequest, pathSegments: string[]) {
 }
 
 type RouteContext = {
-  params?: Promise<Record<string, string | string[] | undefined>>;
+  params: Promise<Record<string, string | string[]>>;
 };
 
-function normalizePathSegments(
-  params?: Record<string, string | string[] | undefined>,
-) {
-  const raw = params?.path;
+function normalizePathSegments(params: Record<string, string | string[]>) {
+  const raw = params.path;
   if (!raw) {
     return [];
   }

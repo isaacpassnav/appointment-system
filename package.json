@@ -17,9 +17,11 @@
     "db:studio": "npm run prisma:studio -w apps/api",
     "db:migrate": "npm run prisma:migrate -w apps/api",
     "db:generate": "npm run prisma:generate -w apps/api",
-    "db:seed": "npm run db:seed -w apps/api", 
+    "db:seed": "npm run db:seed -w apps/api",
     "db:migrate:dev": "npm run prisma:migrate:dev -w apps/api",
-    "db:migrate:deploy": "npm run prisma:migrate:deploy -w apps/api"
+    "db:migrate:deploy": "npm run prisma:migrate:deploy -w apps/api",
+    "heroku-prebuild": "npm run prisma:generate -w apps/api",
+    "heroku-build": "npm run build -w apps/api"
   },
   "repository": {
     "type": "git",
