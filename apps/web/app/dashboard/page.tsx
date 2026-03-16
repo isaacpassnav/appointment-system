@@ -16,6 +16,12 @@ import {
 import type { Appointment } from '@/lib/types';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/providers/auth-provider';
+import {
+  FaCalendarCheck,
+  FaCalendar,
+  FaClipboardList,
+  FaBan,
+} from 'react-icons/fa6';
 
 function formatDate(value: string) {
   return new Date(value).toLocaleString(undefined, {
@@ -27,16 +33,33 @@ function formatDate(value: string) {
   });
 }
 
+function formatDuration(startsAt: string, endsAt: string) {
+  const diff = new Date(endsAt).getTime() - new Date(startsAt).getTime();
+  const minutes = Math.round(diff / 60000);
+  if (minutes >= 60) {
+    const h = Math.floor(minutes / 60);
+    const m = minutes % 60;
+    return m > 0 ? `${h}h ${m}m` : `${h}h`;
+  }
+  return `${minutes}m`;
+}
+
 function statusClass(status: Appointment['status']) {
   switch (status) {
     case 'CONFIRMED':
       return 'bg-emerald-400/15 text-emerald-200 border-emerald-400/30';
     case 'CANCELLED':
       return 'bg-rose-500/15 text-rose-200 border-rose-500/30';
+    case 'COMPLETED':
+      return 'bg-blue-400/15 text-blue-200 border-blue-400/30';
+    case 'NO_SHOW':
+      return 'bg-amber-400/15 text-amber-200 border-amber-400/30';
     default:
       return 'bg-primary/15 text-primary border-primary/30';
   }
 }
+
+type TabKey = 'upcoming' | 'past' | 'all';
 
 export default function DashboardPage() {
   const { status, user, withAccessToken } = useAuth();
@@ -44,22 +67,74 @@ export default function DashboardPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [listError, setListError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<TabKey>('upcoming');
   const [form, setForm] = useState({
     startsAt: '',
     durationMinutes: 30,
     notes: '',
   });
 
-  const upcomingCount = useMemo(
-    () =>
-      appointments.filter(
-        (item) =>
-          (item.status === 'SCHEDULED' || item.status === 'CONFIRMED') &&
-          new Date(item.startsAt) >= new Date(),
+  const kpis = useMemo(() => {
+    const now = new Date();
+    const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+    return {
+      upcoming: appointments.filter(
+        (a) =>
+          (a.status === 'SCHEDULED' || a.status === 'CONFIRMED') &&
+          new Date(a.startsAt) >= now,
       ).length,
-    [appointments],
-  );
+      thisWeek: appointments.filter(
+        (a) =>
+          new Date(a.startsAt) >= now &&
+          new Date(a.startsAt) <= nextWeek &&
+          a.status !== 'CANCELLED',
+      ).length,
+      total: appointments.length,
+      cancelled: appointments.filter((a) => a.status === 'CANCELLED').length,
+    };
+  }, [appointments]);
+
+  const filteredAppointments = useMemo(() => {
+    const now = new Date();
+    if (activeTab === 'upcoming') {
+      return appointments.filter(
+        (a) =>
+          (a.status === 'SCHEDULED' || a.status === 'CONFIRMED') &&
+          new Date(a.startsAt) >= now,
+      );
+    }
+    if (activeTab === 'past') {
+      return appointments.filter(
+        (a) =>
+          new Date(a.endsAt) < now ||
+          a.status === 'COMPLETED' ||
+          a.status === 'NO_SHOW' ||
+          a.status === 'CANCELLED',
+      );
+    }
+    return appointments;
+  }, [appointments, activeTab]);
+
+  const tabCounts = useMemo(() => {
+    const now = new Date();
+    return {
+      upcoming: appointments.filter(
+        (a) =>
+          (a.status === 'SCHEDULED' || a.status === 'CONFIRMED') &&
+          new Date(a.startsAt) >= now,
+      ).length,
+      past: appointments.filter(
+        (a) =>
+          new Date(a.endsAt) < now ||
+          a.status === 'COMPLETED' ||
+          a.status === 'NO_SHOW' ||
+          a.status === 'CANCELLED',
+      ).length,
+      all: appointments.length,
+    };
+  }, [appointments]);
 
   useEffect(() => {
     const load = async () => {
@@ -67,40 +142,31 @@ export default function DashboardPage() {
         setLoading(false);
         return;
       }
-
       setLoading(true);
-      setError(null);
-
+      setListError(null);
       try {
-        const data = await withAccessToken((accessToken) => listAppointments(accessToken));
+        const data = await withAccessToken((token) => listAppointments(token));
         setAppointments(data);
-      } catch (loadError) {
-        if (isApiError(loadError)) {
-          setError(loadError.message);
-        } else {
-          setError(t('dashboard.errorLoad'));
-        }
+      } catch (err) {
+        setListError(isApiError(err) ? err.message : t('dashboard.errorLoad'));
       } finally {
         setLoading(false);
       }
     };
-
     void load();
   }, [status, withAccessToken, t]);
 
-  const onCreate = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const onCreate = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     if (!form.startsAt) {
-      setError(t('dashboard.errorMissingStart'));
+      setFormError(t('dashboard.errorMissingStart'));
       return;
     }
-
     setSubmitting(true);
-    setError(null);
-
+    setFormError(null);
     try {
-      const created = await withAccessToken((accessToken) =>
-        createAppointment(accessToken, {
+      const created = await withAccessToken((token) =>
+        createAppointment(token, {
           startsAt: new Date(form.startsAt).toISOString(),
           durationMinutes: Number(form.durationMinutes),
           notes: form.notes.trim() || undefined,
@@ -108,37 +174,30 @@ export default function DashboardPage() {
       );
       setAppointments((prev) => [created, ...prev]);
       setForm({ startsAt: '', durationMinutes: 30, notes: '' });
-    } catch (submitError) {
-      if (isApiError(submitError)) {
-        setError(submitError.message);
-      } else {
-        setError(t('dashboard.errorCreate'));
-      }
+      setActiveTab('upcoming');
+    } catch (err) {
+      setFormError(isApiError(err) ? err.message : t('dashboard.errorCreate'));
     } finally {
       setSubmitting(false);
     }
   };
 
-  const onCancel = async (appointmentId: string) => {
-    setError(null);
+  const onCancel = async (id: string) => {
+    setListError(null);
     try {
-      const updated = await withAccessToken((accessToken) =>
-        cancelAppointment(accessToken, appointmentId),
-      );
-      setAppointments((prev) =>
-        prev.map((item) => (item.id === updated.id ? updated : item)),
-      );
-    } catch (cancelError) {
-      if (isApiError(cancelError)) {
-        setError(cancelError.message);
-      } else {
-        setError(t('dashboard.errorCancel'));
-      }
+      const updated = await withAccessToken((token) => cancelAppointment(token, id));
+      setAppointments((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+    } catch (err) {
+      setListError(isApiError(err) ? err.message : t('dashboard.errorCancel'));
     }
   };
 
   if (status === 'loading') {
-    return <p className="muted">{t('dashboard.loading')}</p>;
+    return (
+      <div className="dash-loading">
+        <p className="muted">{t('dashboard.loading')}</p>
+      </div>
+    );
   }
 
   if (status === 'unauthenticated' || !user) {
@@ -162,8 +221,15 @@ export default function DashboardPage() {
     );
   }
 
+  const tabs: { key: TabKey; label: string; count: number }[] = [
+    { key: 'upcoming', label: t('dashboard.tabUpcoming'), count: tabCounts.upcoming },
+    { key: 'past', label: t('dashboard.tabPast'), count: tabCounts.past },
+    { key: 'all', label: t('dashboard.tabAll'), count: tabCounts.all },
+  ];
+
   return (
     <section className="stack">
+      {/* Header */}
       <header className="dashboard-head reveal">
         <div>
           <p className="eyebrow">{t('dashboard.workspace')}</p>
@@ -175,26 +241,62 @@ export default function DashboardPage() {
             })}
           </p>
         </div>
-        <div className="stat-pill">
-          <strong>{upcomingCount}</strong>
-          <span>{t('dashboard.upcoming')}</span>
-        </div>
       </header>
 
-      <div className="dashboard-grid">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('dashboard.createTitle')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form className="form-grid compact" onSubmit={onCreate}>
+      {/* KPI row */}
+      <div className="kpi-row">
+        <div className="kpi-card kpi-accent">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">{t('dashboard.kpiUpcoming')}</span>
+            <FaCalendarCheck className="kpi-card-icon" aria-hidden />
+          </div>
+          <span className="kpi-card-value">{loading ? '—' : kpis.upcoming}</span>
+        </div>
+        <div className="kpi-card kpi-warning">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">{t('dashboard.kpiThisWeek')}</span>
+            <FaCalendar className="kpi-card-icon" aria-hidden />
+          </div>
+          <span className="kpi-card-value">{loading ? '—' : kpis.thisWeek}</span>
+        </div>
+        <div className="kpi-card">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">{t('dashboard.kpiTotal')}</span>
+            <FaClipboardList className="kpi-card-icon" aria-hidden />
+          </div>
+          <span className="kpi-card-value">{loading ? '—' : kpis.total}</span>
+        </div>
+        <div className="kpi-card kpi-danger">
+          <div className="kpi-card-header">
+            <span className="kpi-card-label">{t('dashboard.kpiCancelled')}</span>
+            <FaBan className="kpi-card-icon" aria-hidden />
+          </div>
+          <span className="kpi-card-value">{loading ? '—' : kpis.cancelled}</span>
+        </div>
+      </div>
+
+      {/* Create appointment */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t('dashboard.createTitle')}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {formError && (
+            <p className="feedback error" style={{ marginBottom: '12px' }}>
+              {formError}
+            </p>
+          )}
+          <form className="form-grid compact" onSubmit={onCreate}>
+            <div className="create-form-row">
               <div className="grid gap-2">
                 <Label htmlFor="appointment-start">{t('dashboard.dateTime')}</Label>
                 <Input
                   id="appointment-start"
                   type="datetime-local"
                   value={form.startsAt}
-                  onChange={(event) => setForm((prev) => ({ ...prev, startsAt: event.target.value }))}
+                  onChange={(e) =>
+                    setForm((prev) => ({ ...prev, startsAt: e.target.value }))
+                  }
                   required
                 />
               </div>
@@ -207,83 +309,97 @@ export default function DashboardPage() {
                   max={720}
                   step={15}
                   value={form.durationMinutes}
-                  onChange={(event) =>
+                  onChange={(e) =>
                     setForm((prev) => ({
                       ...prev,
-                      durationMinutes: Number(event.target.value),
+                      durationMinutes: Number(e.target.value),
                     }))
                   }
                   required
                 />
               </div>
-              <div className="grid gap-2">
-                <Label htmlFor="appointment-notes">{t('dashboard.notes')}</Label>
-                <textarea
-                  id="appointment-notes"
-                  rows={3}
-                  className="w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
-                  placeholder={t('dashboard.notesPlaceholder')}
-                  value={form.notes}
-                  onChange={(event) => setForm((prev) => ({ ...prev, notes: event.target.value }))}
-                />
-              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="appointment-notes">{t('dashboard.notes')}</Label>
+              <textarea
+                id="appointment-notes"
+                rows={2}
+                className="w-full rounded-xl border border-input bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ring-offset-background"
+                placeholder={t('dashboard.notesPlaceholder')}
+                value={form.notes}
+                onChange={(e) =>
+                  setForm((prev) => ({ ...prev, notes: e.target.value }))
+                }
+              />
+            </div>
+            <div>
               <Button type="submit" disabled={submitting}>
                 {submitting ? t('dashboard.creating') : t('dashboard.createButton')}
               </Button>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('dashboard.tenantTitle')}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="muted">{t('dashboard.tenantBody')}</p>
-            <ul className="tenant-list">
-              <li>
-                <strong>{t('dashboard.tenantOwner')}</strong>
-                <span>{t('dashboard.tenantOwnerBody')}</span>
-              </li>
-              <li>
-                <strong>{t('dashboard.tenantReseller')}</strong>
-                <span>{t('dashboard.tenantResellerBody')}</span>
-              </li>
-              <li>
-                <strong>{t('dashboard.tenantClient')}</strong>
-                <span>{t('dashboard.tenantClientBody')}</span>
-              </li>
-            </ul>
-          </CardContent>
-        </Card>
-      </div>
-
+      {/* Appointments list */}
       <Card>
         <CardHeader>
-          <CardTitle>{t('dashboard.appointmentsTitle')}</CardTitle>
+          <div className="appointments-head">
+            <CardTitle>{t('dashboard.appointmentsTitle')}</CardTitle>
+            <div className="filter-tabs">
+              {tabs.map(({ key, label, count }) => (
+                <button
+                  key={key}
+                  type="button"
+                  className={`filter-tab-btn${activeTab === key ? ' active' : ''}`}
+                  onClick={() => setActiveTab(key)}
+                >
+                  {label}
+                  {count > 0 && <span className="tab-count"> {count}</span>}
+                </button>
+              ))}
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {error ? <p className="feedback error">{error}</p> : null}
-          {loading ? <p className="muted">{t('dashboard.loadingAppointments')}</p> : null}
-
-          {!loading && appointments.length === 0 ? (
-            <p className="muted">{t('dashboard.emptyAppointments')}</p>
+          {listError && <p className="feedback error">{listError}</p>}
+          {loading ? (
+            <p className="muted">{t('dashboard.loadingAppointments')}</p>
+          ) : filteredAppointments.length === 0 ? (
+            <div className="empty-state">
+              <p className="muted">
+                {activeTab === 'upcoming'
+                  ? t('dashboard.emptyUpcoming')
+                  : activeTab === 'past'
+                    ? t('dashboard.emptyPast')
+                    : t('dashboard.emptyAppointments')}
+              </p>
+            </div>
           ) : (
             <div className="appointments-grid">
-              {appointments.map((item) => (
+              {filteredAppointments.map((item) => (
                 <article key={item.id} className="appointment-item">
-                  <div>
+                  <div className="appointment-left">
                     <p className="appointment-date">{formatDate(item.startsAt)}</p>
                     <div className="appointment-meta">
-                      <span>
-                        {t('dashboard.ends')} {formatDate(item.endsAt)}{' '}
+                      <span className="appointment-duration">
+                        {formatDuration(item.startsAt, item.endsAt)}
                       </span>
                       <Badge className={statusClass(item.status)}>{item.status}</Badge>
                     </div>
-                    {item.notes ? <p className="appointment-notes">{item.notes}</p> : null}
+                    {item.notes ? (
+                      <p className="appointment-notes">{item.notes}</p>
+                    ) : null}
                   </div>
-                  {item.status !== 'CANCELLED' ? (
-                    <Button variant="outline" size="sm" onClick={() => void onCancel(item.id)}>
+                  {item.status !== 'CANCELLED' &&
+                  item.status !== 'COMPLETED' &&
+                  item.status !== 'NO_SHOW' ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="appointment-cancel-btn"
+                      onClick={() => void onCancel(item.id)}
+                    >
                       {t('dashboard.cancel')}
                     </Button>
                   ) : null}
