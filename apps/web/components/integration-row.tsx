@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-import { FaGoogle, FaVideo, FaWhatsapp } from "react-icons/fa6";
+import { FaGoogle, FaWhatsapp } from "react-icons/fa6";
 import { SiStripe, SiZoom, SiHubspot, SiMailchimp } from "react-icons/si";
 
 const integrations = [
