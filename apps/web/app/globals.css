@@ -468,8 +468,7 @@ img {
     transform: translateY(-4px);
   }
 }
-
-@keyframes pulseGlow {
+@keyframes shadowPulse {
   0%,
   100% {
     box-shadow: var(--shadow-soft);
@@ -479,8 +478,10 @@ img {
   }
 }
 
-.group-hover\\:scale-110 > * {
-  transform: scale(1.1);
+@keyframes scaleUp {
+  100% {
+    transform: scale(1.1);
+  }
 }
 
 @media (max-width: 768px) {
