@@ -2,7 +2,9 @@ import {
   BadRequestException,
   ConflictException,
   ForbiddenException,
+  InternalServerErrorException,
   Injectable,
+  Logger,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -17,6 +19,8 @@ import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -148,29 +152,50 @@ export class AuthService {
   private async issueTokens(payload: JwtPayload) {
     const accessSecret = this.configService.get<string>('JWT_ACCESS_SECRET');
     const refreshSecret = this.configService.get<string>('JWT_REFRESH_SECRET');
-    const accessExpiresIn = this.parseExpiresInToSeconds(
-      this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m',
-    );
-    const refreshExpiresIn = this.parseExpiresInToSeconds(
-      this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d',
-    );
+    const accessExpiresInRaw =
+      this.configService.get<string>('JWT_ACCESS_EXPIRES_IN') ?? '15m';
+    const refreshExpiresInRaw =
+      this.configService.get<string>('JWT_REFRESH_EXPIRES_IN') ?? '7d';
 
     if (!accessSecret || !refreshSecret) {
-      throw new Error('JWT secrets are required.');
+      throw new InternalServerErrorException(
+        'JWT configuration is missing required secrets.',
+      );
     }
 
-    const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        secret: accessSecret,
-        expiresIn: accessExpiresIn,
-      }),
-      this.jwtService.signAsync(payload, {
-        secret: refreshSecret,
-        expiresIn: refreshExpiresIn,
-      }),
-    ]);
+    let accessExpiresIn: number;
+    let refreshExpiresIn: number;
+    try {
+      accessExpiresIn = this.parseExpiresInToSeconds(accessExpiresInRaw);
+      refreshExpiresIn = this.parseExpiresInToSeconds(refreshExpiresInRaw);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Invalid JWT expiration config: ${message}`);
+      throw new InternalServerErrorException(
+        'JWT expiration config is invalid. Expected formats: 15m, 7d, 3600.',
+      );
+    }
 
-    return { accessToken, refreshToken };
+    try {
+      const [accessToken, refreshToken] = await Promise.all([
+        this.jwtService.signAsync(payload, {
+          secret: accessSecret,
+          expiresIn: accessExpiresIn,
+        }),
+        this.jwtService.signAsync(payload, {
+          secret: refreshSecret,
+          expiresIn: refreshExpiresIn,
+        }),
+      ]);
+
+      return { accessToken, refreshToken };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Failed to sign JWT tokens: ${message}`);
+      throw new InternalServerErrorException(
+        'JWT token generation failed. Check JWT_* environment variables.',
+      );
+    }
   }
 
   private async resolveTenantContext(
@@ -249,24 +274,40 @@ export class AuthService {
   }
 
   private parseExpiresInToSeconds(value: string): number {
-    const normalized = value.trim().toLowerCase();
+    const normalized = value.trim().replace(/^['"]|['"]$/g, '').toLowerCase();
     if (/^\d+$/.test(normalized)) {
       return Number(normalized);
     }
 
-    const match = normalized.match(/^(\d+)([smhdw])$/);
+    const match = normalized.match(
+      /^(\d+)\s*(s|sec|secs|second|seconds|m|min|mins|minute|minutes|h|hour|hours|d|day|days|w|week|weeks)$/i,
+    );
     if (!match) {
       throw new Error(`Invalid JWT expiration format: ${value}`);
     }
 
     const amount = Number(match[1]);
-    const unit = match[2];
+    const unit = match[2].toLowerCase();
     const multipliers: Record<string, number> = {
       s: 1,
+      sec: 1,
+      secs: 1,
+      second: 1,
+      seconds: 1,
       m: 60,
+      min: 60,
+      mins: 60,
+      minute: 60,
+      minutes: 60,
       h: 60 * 60,
+      hour: 60 * 60,
+      hours: 60 * 60,
       d: 60 * 60 * 24,
+      day: 60 * 60 * 24,
+      days: 60 * 60 * 24,
       w: 60 * 60 * 24 * 7,
+      week: 60 * 60 * 24 * 7,
+      weeks: 60 * 60 * 24 * 7,
     };
 
     return amount * multipliers[unit];
