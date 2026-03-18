@@ -43,6 +43,7 @@ async function proxyRequest(request: NextRequest, context: RouteContext) {
   const headers = new Headers(request.headers);
 
   headers.delete('host');
+  headers.delete('accept-encoding');
   HOP_BY_HOP_HEADERS.forEach((header) => headers.delete(header));
 
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
@@ -57,6 +58,8 @@ async function proxyRequest(request: NextRequest, context: RouteContext) {
 
   const responseHeaders = new Headers(upstreamResponse.headers);
   HOP_BY_HOP_HEADERS.forEach((header) => responseHeaders.delete(header));
+  responseHeaders.delete('content-encoding');
+  responseHeaders.delete('content-length');
 
   return new NextResponse(upstreamResponse.body, {
     status: upstreamResponse.status,
