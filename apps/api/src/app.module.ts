@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { JwtModule } from '@nestjs/jwt';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import path from 'path';
@@ -7,6 +8,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { UsersModule } from './modules/users/users.module';
 import { ThrottlerBehindProxyGuard } from './common/guards/throttler-behind-proxy.guard';
+import { TenantGuard } from './common/guards/tenant.guard';
 import { PrismaModule } from './prisma/prisma.module';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -37,6 +39,7 @@ import { AppService } from './app.service';
         limit: 180,
       },
     ]),
+    JwtModule.register({}),
     PrismaModule,
     UsersModule,
     AuthModule,
@@ -48,6 +51,10 @@ import { AppService } from './app.service';
     {
       provide: APP_GUARD,
       useClass: ThrottlerBehindProxyGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: TenantGuard,
     },
   ],
 })

@@ -7,10 +7,12 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
+import { createHash, randomBytes } from 'node:crypto';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TenantRole, UserRole } from '@prisma/client';
 import bcrypt from 'bcrypt';
+import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignInDto } from './dto/sign-in.dto';
@@ -25,6 +27,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly mailService: MailService,
   ) {}
 
   async signUp(dto: SignUpDto) {
@@ -53,6 +56,8 @@ export class AuthService {
       tenantSlug,
     });
 
+    const verificationToken = await this.issueEmailVerificationToken(user.id);
+
     const tokens = await this.issueTokens({
       sub: user.id,
       email: user.email,
@@ -62,6 +67,13 @@ export class AuthService {
     });
 
     await this.usersService.setRefreshTokenHash(user.id, tokens.refreshToken);
+    const verifyUrl = this.buildVerifyUrl(verificationToken);
+    this.scheduleSignupEmails({
+      email: user.email,
+      fullName: user.fullName,
+      verifyUrl,
+    });
+
     return { user, ...tokens };
   }
 
@@ -69,6 +81,12 @@ export class AuthService {
     const user = await this.usersService.findByEmail(dto.email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials.');
+    }
+
+    if (!user.emailVerified) {
+      throw new ForbiddenException(
+        'Email not verified. Please check your inbox and verify your account.',
+      );
     }
 
     const validPassword = await bcrypt.compare(dto.password, user.passwordHash);
@@ -114,6 +132,12 @@ export class AuthService {
       throw new UnauthorizedException('Refresh token is not valid.');
     }
 
+    if (!user.emailVerified) {
+      throw new ForbiddenException(
+        'Email not verified. Please verify your account before refreshing session.',
+      );
+    }
+
     const validRefreshHash = await bcrypt.compare(
       dto.refreshToken,
       user.refreshTokenHash,
@@ -124,10 +148,15 @@ export class AuthService {
     }
 
     if (!payload.tenantId) {
-      throw new UnauthorizedException('Refresh token is missing tenant context.');
+      throw new UnauthorizedException(
+        'Refresh token is missing tenant context.',
+      );
     }
 
-    const tenantContext = await this.resolveTenantContext(user, payload.tenantId);
+    const tenantContext = await this.resolveTenantContext(
+      user,
+      payload.tenantId,
+    );
 
     const tokens = await this.issueTokens({
       sub: user.id,
@@ -147,6 +176,55 @@ export class AuthService {
 
   async me(userId: string) {
     return this.usersService.findOne(userId);
+  }
+
+  async verifyEmail(token: string) {
+    const normalizedToken = token.trim();
+    if (!normalizedToken) {
+      throw new BadRequestException('Verification token is required.');
+    }
+
+    const user = await this.usersService.verifyEmailByTokenHash(
+      this.hashVerificationToken(normalizedToken),
+    );
+
+    if (!user) {
+      throw new BadRequestException(
+        'Verification token is invalid or has expired.',
+      );
+    }
+
+    return {
+      success: true,
+      message: 'Email verified successfully.',
+      email: user.email,
+    };
+  }
+
+  async resendVerificationEmail(email: string) {
+    const normalizedEmail = email.toLowerCase().trim();
+    const genericResponse = {
+      success: true,
+      message:
+        'If the account exists and is not verified, we have sent a new verification email.',
+    };
+
+    const user = await this.usersService.findByEmail(normalizedEmail);
+    if (!user || user.emailVerified) {
+      return genericResponse;
+    }
+
+    const verificationToken = await this.issueEmailVerificationToken(user.id);
+    const verifyUrl = this.buildVerifyUrl(verificationToken);
+
+    void this.mailService
+      .sendVerifyEmail(user.email, user.fullName, verifyUrl)
+      .catch((error: unknown) => {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(`Failed to resend verification email: ${message}`);
+      });
+
+    return genericResponse;
   }
 
   private async issueTokens(payload: JwtPayload) {
@@ -207,7 +285,9 @@ export class AuthService {
     const isReseller = user.role === UserRole.RESELLER;
 
     if (!normalizedTenantId) {
-      const memberships = await this.usersService.listTenantMemberships(user.id);
+      const memberships = await this.usersService.listTenantMemberships(
+        user.id,
+      );
       if (memberships.length === 1) {
         return {
           tenantId: memberships[0].tenant.id,
@@ -248,11 +328,17 @@ export class AuthService {
     }
 
     if (isSuperadmin) {
-      return { tenantId: normalizedTenantId, tenantRole: TenantRole.BUSINESS_ADMIN };
+      return {
+        tenantId: normalizedTenantId,
+        tenantRole: TenantRole.BUSINESS_ADMIN,
+      };
     }
 
     if (isReseller && tenant.resellerId === user.id) {
-      return { tenantId: normalizedTenantId, tenantRole: TenantRole.BUSINESS_ADMIN };
+      return {
+        tenantId: normalizedTenantId,
+        tenantRole: TenantRole.BUSINESS_ADMIN,
+      };
     }
 
     throw new ForbiddenException('No access to tenant.');
@@ -274,7 +360,10 @@ export class AuthService {
   }
 
   private parseExpiresInToSeconds(value: string): number {
-    const normalized = value.trim().replace(/^['"]|['"]$/g, '').toLowerCase();
+    const normalized = value
+      .trim()
+      .replace(/^['"]|['"]$/g, '')
+      .toLowerCase();
     if (/^\d+$/.test(normalized)) {
       return Number(normalized);
     }
@@ -311,5 +400,65 @@ export class AuthService {
     };
 
     return amount * multipliers[unit];
+  }
+
+  private createVerificationToken() {
+    return randomBytes(32).toString('hex');
+  }
+
+  private hashVerificationToken(token: string) {
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private async issueEmailVerificationToken(userId: string) {
+    const verificationToken = this.createVerificationToken();
+    const verificationTokenHash = this.hashVerificationToken(verificationToken);
+    const verificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    await this.usersService.setEmailVerificationToken(
+      userId,
+      verificationTokenHash,
+      verificationExpiresAt,
+    );
+    return verificationToken;
+  }
+
+  private buildVerifyUrl(token: string) {
+    const template = this.configService.get<string>(
+      'VERIFY_EMAIL_URL_TEMPLATE',
+    );
+    if (template?.includes('{token}')) {
+      return template.replace('{token}', token);
+    }
+
+    const apiBase =
+      this.configService.get<string>('API_PUBLIC_BASE_URL') ??
+      'http://localhost:3000';
+    const normalizedApiBase = apiBase.replace(/\/$/, '');
+    return `${normalizedApiBase}/api/auth/verify?token=${token}`;
+  }
+
+  private scheduleSignupEmails(params: {
+    email: string;
+    fullName: string;
+    verifyUrl: string;
+  }) {
+    void Promise.allSettled([
+      this.mailService.sendWelcomeEmail(params.email, params.fullName),
+      this.mailService.sendVerifyEmail(
+        params.email,
+        params.fullName,
+        params.verifyUrl,
+      ),
+    ]).then((results) => {
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          const message =
+            result.reason instanceof Error
+              ? result.reason.message
+              : String(result.reason);
+          this.logger.error(`Failed to send signup email: ${message}`);
+        }
+      }
+    });
   }
 }

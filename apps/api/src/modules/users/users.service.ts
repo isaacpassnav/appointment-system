@@ -15,6 +15,7 @@ const userPublicSelect = {
   phone: true,
   timezone: true,
   role: true,
+  emailVerified: true,
   createdAt: true,
   updatedAt: true,
 } satisfies Prisma.UserSelect;
@@ -35,6 +36,7 @@ export class UsersService {
           phone: dto.phone?.trim(),
           timezone: dto.timezone?.trim() || 'UTC',
           role: UserRole.CLIENT,
+          emailVerified: false,
         },
         select: userPublicSelect,
       });
@@ -230,5 +232,45 @@ export class UsersService {
       where: { id: userId },
       data: { refreshTokenHash: null },
     });
+  }
+
+  async setEmailVerificationToken(
+    userId: string,
+    tokenHash: string,
+    expiresAt: Date,
+  ) {
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        emailVerificationTokenHash: tokenHash,
+        emailVerificationTokenExpiresAt: expiresAt,
+        emailVerified: false,
+      },
+    });
+  }
+
+  async verifyEmailByTokenHash(tokenHash: string) {
+    const user = await this.prisma.user.findFirst({
+      where: {
+        emailVerificationTokenHash: tokenHash,
+        emailVerificationTokenExpiresAt: { gt: new Date() },
+      },
+      select: { id: true, email: true },
+    });
+
+    if (!user) {
+      return null;
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        emailVerified: true,
+        emailVerificationTokenHash: null,
+        emailVerificationTokenExpiresAt: null,
+      },
+    });
+
+    return user;
   }
 }

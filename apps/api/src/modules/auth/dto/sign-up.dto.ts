@@ -11,7 +11,8 @@ export class SignUpDto extends CreateUserDto {
 
   @ApiPropertyOptional({
     example: 'barberia-prime',
-    description: 'Optional tenant slug. Lowercase letters, numbers, and hyphens.',
+    description:
+      'Optional tenant slug. Lowercase letters, numbers, and hyphens.',
   })
   @IsOptional()
   @IsString()

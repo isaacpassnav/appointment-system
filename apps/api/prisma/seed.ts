@@ -55,11 +55,15 @@ async function run() {
         fullName,
         timezone,
         role: UserRole.CLIENT,
+        emailVerified: true,
       },
       update: {
         passwordHash,
         fullName,
         timezone,
+        emailVerified: true,
+        emailVerificationTokenHash: null,
+        emailVerificationTokenExpiresAt: null,
       },
       select: { id: true, email: true },
     });

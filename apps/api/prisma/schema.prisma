@@ -57,19 +57,22 @@ enum TenantMemberStatus {
 }
 
 model User {
-  id               String        @id @default(uuid()) @db.Uuid
-  email            String        @unique
-  passwordHash     String
-  fullName         String
-  phone            String?       @db.VarChar(30)
-  timezone         String        @default("UTC")
-  role             UserRole      @default(CLIENT)
-  refreshTokenHash String?
-  createdAt        DateTime      @default(now())
-  updatedAt        DateTime      @updatedAt
-  appointments     Appointment[]
-  memberships      TenantMember[]
-  resellerTenants  Tenant[]      @relation("ResellerTenants")
+  id                             String        @id @default(uuid()) @db.Uuid
+  email                          String        @unique
+  passwordHash                   String
+  fullName                       String
+  phone                          String?       @db.VarChar(30)
+  timezone                       String        @default("UTC")
+  role                           UserRole      @default(CLIENT)
+  emailVerified                  Boolean       @default(false)
+  emailVerificationTokenHash     String?
+  emailVerificationTokenExpiresAt DateTime?
+  refreshTokenHash               String?
+  createdAt                      DateTime      @default(now())
+  updatedAt                      DateTime      @updatedAt
+  appointments                   Appointment[]
+  memberships                    TenantMember[]
+  resellerTenants                Tenant[]      @relation("ResellerTenants")
 }
 
 model Tenant {

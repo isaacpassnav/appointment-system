@@ -18,7 +18,14 @@ export class PrismaService
   }
 
   async onModuleInit() {
-    await this.$connect();
+    try {
+      await this.$connect();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const hint =
+        'Database TLS handshake failed. For Supabase pooler with Prisma adapter-pg, use DATABASE_URL with sslmode=no-verify (or uselibpqcompat=true&sslmode=require).';
+      throw new Error(`${message}\n${hint}`);
+    }
   }
 
   async onModuleDestroy() {

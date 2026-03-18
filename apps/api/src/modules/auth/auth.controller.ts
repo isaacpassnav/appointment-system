@@ -1,16 +1,19 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
   ApiOkResponse,
   ApiOperation,
+  ApiQuery,
   ApiTags,
 } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from './decorators/current-user.decorator';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ResendVerificationDto } from './dto/resend-verification.dto';
 import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
+import { VerifyEmailDto } from './dto/verify-email.dto';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import type { JwtPayload } from './interfaces/jwt-payload.interface';
 import { AuthService } from './auth.service';
@@ -42,6 +45,22 @@ export class AuthController {
   @Post('refresh')
   refresh(@Body() dto: RefreshTokenDto) {
     return this.authService.refresh(dto);
+  }
+
+  @ApiOperation({ summary: 'Verify email account with token' })
+  @ApiQuery({ name: 'token', required: true })
+  @Throttle({ auth: { limit: 20, ttl: 60_000 } })
+  @Get('verify')
+  verifyEmail(@Query() query: VerifyEmailDto) {
+    return this.authService.verifyEmail(query.token);
+  }
+
+  @ApiOperation({ summary: 'Resend verification email' })
+  @ApiBody({ type: ResendVerificationDto })
+  @Throttle({ auth: { limit: 6, ttl: 60_000 } })
+  @Post('resend-verification')
+  resendVerificationEmail(@Body() dto: ResendVerificationDto) {
+    return this.authService.resendVerificationEmail(dto.email);
   }
 
   @ApiBearerAuth('access-token')
