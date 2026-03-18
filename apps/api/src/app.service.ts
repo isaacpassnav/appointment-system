@@ -5,6 +5,7 @@ export class AppService {
   getHealth() {
     return {
       status: 'ok',
+      timestamp: new Date().toISOString(),
       service: 'appointment-api',
     };
   }

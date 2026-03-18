@@ -39,16 +39,17 @@ async function bootstrap() {
   SwaggerModule.setup('api/docs', app, document);
 
   const httpAdapter = app.getHttpAdapter();
-  const healthPayload = {
+  const buildHealthPayload = () => ({
     status: 'ok',
+    timestamp: new Date().toISOString(),
     service: 'appointment-api',
-  };
+  });
 
   httpAdapter.get('/', (_req, res) => {
     httpAdapter.reply(
       res,
       {
-        ...healthPayload,
+        ...buildHealthPayload(),
         docs: '/api/docs',
         health: '/health',
       },
@@ -57,7 +58,7 @@ async function bootstrap() {
   });
 
   httpAdapter.get('/health', (_req, res) => {
-    httpAdapter.reply(res, healthPayload, 200);
+    httpAdapter.reply(res, buildHealthPayload(), 200);
   });
 
   const port = Number(process.env.PORT ?? 3000);

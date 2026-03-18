@@ -1,0 +1,172 @@
+name: Deploy Production
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "🔍 Detect changed paths"
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            backend:
+              - 'apps/api/**'
+              - 'apps/worker/**'
+            frontend:
+              - 'apps/web/**'
+
+      - name: "🧾 Log changed scopes"
+        run: |
+          echo "backend=${{ steps.filter.outputs.backend }}"
+          echo "frontend=${{ steps.filter.outputs.frontend }}"
+          if [ "${{ steps.filter.outputs.backend }}" != "true" ]; then
+            echo "⏭️ No backend changes detected: deploy-backend will be skipped."
+          fi
+          if [ "${{ steps.filter.outputs.frontend }}" != "true" ]; then
+            echo "⏭️ No frontend changes detected: deploy-frontend will be skipped."
+          fi
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: "📥 Checkout"
+        uses: actions/checkout@v4
+
+      - name: "🟢 Setup Node.js 20"
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: "📦 Install dependencies"
+        run: npm ci
+
+      - name: "🔎 Detect lint script"
+        id: lint-check
+        run: |
+          if node -e "const p=require('./package.json'); process.exit(p?.scripts?.lint ? 0 : 1)"; then
+            echo "has_lint=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_lint=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: "🧹 Run lint"
+        if: steps.lint-check.outputs.has_lint == 'true'
+        run: npm run lint
+
+      - name: "⏭️ Skip lint (script not found)"
+        if: steps.lint-check.outputs.has_lint != 'true'
+        run: echo "No lint script found in root package.json. Skipping lint without failing."
+
+      - name: "🧠 Typecheck backend (apps/api)"
+        run: npx tsc --noEmit -p apps/api/tsconfig.json
+
+      - name: "🧠 Typecheck frontend (apps/web)"
+        run: npx tsc --noEmit -p apps/web/tsconfig.json
+
+  deploy-backend:
+    runs-on: ubuntu-latest
+    needs:
+      - detect-changes
+      - validate
+    if: needs.validate.result == 'success' && needs.detect-changes.outputs.backend == 'true'
+    steps:
+      - name: "🚀 Redeploy API service on Koyeb"
+        env:
+          KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
+          KOYEB_API_SERVICE_ID: ${{ secrets.KOYEB_API_SERVICE_ID }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "https://app.koyeb.com/v1/services/${KOYEB_API_SERVICE_ID}/redeploy" \
+            --header "Authorization: Bearer ${KOYEB_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data '{}'
+          echo "✅ API redeploy triggered."
+
+      - name: "🚀 Redeploy Worker service on Koyeb"
+        env:
+          KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
+          KOYEB_WORKER_SERVICE_ID: ${{ secrets.KOYEB_WORKER_SERVICE_ID }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "https://app.koyeb.com/v1/services/${KOYEB_WORKER_SERVICE_ID}/redeploy" \
+            --header "Authorization: Bearer ${KOYEB_API_TOKEN}" \
+            --header "Content-Type: application/json" \
+            --data '{}'
+          echo "✅ Worker redeploy triggered."
+
+      - name: "⏱️ Wait for Koyeb rollout to initialize"
+        run: sleep 30
+
+  health-check:
+    runs-on: ubuntu-latest
+    needs:
+      - detect-changes
+      - validate
+      - deploy-backend
+    if: always() && needs.validate.result == 'success'
+    steps:
+      - name: "ℹ️ Log backend deploy status"
+        run: |
+          echo "deploy-backend result: ${{ needs.deploy-backend.result }}"
+          if [ "${{ needs.deploy-backend.result }}" = "skipped" ]; then
+            echo "⏭️ Backend deploy skipped. Verifying current backend health before frontend deploy."
+          fi
+
+      - name: "❌ Fail if backend deploy job failed"
+        if: needs.deploy-backend.result == 'failure'
+        run: |
+          echo "deploy-backend failed, blocking frontend deploy."
+          exit 1
+
+      - name: "🩺 Check backend health (15 retries, 20s interval)"
+        env:
+          API_HEALTH_URL: ${{ secrets.API_HEALTH_URL }}
+        run: |
+          echo "Checking health at: ${API_HEALTH_URL}"
+          for attempt in $(seq 1 15); do
+            code="$(curl --silent --show-error --output /tmp/health.json --write-out "%{http_code}" --max-time 10 "${API_HEALTH_URL}" || true)"
+            if [ "${code}" = "200" ]; then
+              echo "✅ Health check passed on attempt ${attempt}."
+              cat /tmp/health.json
+              exit 0
+            fi
+            echo "Attempt ${attempt}/15 failed (HTTP ${code:-000}). Retrying in 20s..."
+            sleep 20
+          done
+
+          echo "❌ Backend health check failed after 15 attempts."
+          exit 1
+
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs:
+      - detect-changes
+      - validate
+      - health-check
+    if: needs.validate.result == 'success' && needs.health-check.result == 'success' && needs.detect-changes.outputs.frontend == 'true'
+    steps:
+      - name: "🚀 Trigger Vercel deploy hook"
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          curl --fail-with-body --silent --show-error \
+            --request POST \
+            --url "${VERCEL_DEPLOY_HOOK}"
+          echo "✅ Frontend deploy hook triggered in Vercel."

@@ -22,9 +22,36 @@ describe('AppController (e2e)', () => {
   });
 
   it('/api/health (GET)', () => {
-    return request(app.getHttpServer()).get('/api/health').expect(200).expect({
-      status: 'ok',
-      service: 'appointment-api',
-    });
+    return request(app.getHttpServer())
+      .get('/api/health')
+      .expect(200)
+      .expect((res) => {
+        const body: unknown = res.body;
+        expect(body).toEqual(
+          expect.objectContaining({
+            status: 'ok',
+            service: 'appointment-api',
+          }),
+        );
+
+        if (
+          typeof body !== 'object' ||
+          body === null ||
+          !('timestamp' in body)
+        ) {
+          throw new Error(
+            'Health response does not contain a timestamp field.',
+          );
+        }
+
+        const timestamp = (body as { timestamp: unknown }).timestamp;
+        expect(typeof timestamp).toBe('string');
+
+        if (typeof timestamp !== 'string') {
+          throw new Error('Health timestamp must be a string.');
+        }
+
+        expect(new Date(timestamp).toISOString()).toBe(timestamp);
+      });
   });
 });

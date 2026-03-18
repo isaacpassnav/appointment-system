@@ -16,10 +16,13 @@ describe('AppController', () => {
 
   describe('health', () => {
     it('should return service health payload', () => {
-      expect(appController.getHealth()).toEqual({
+      const payload = appController.getHealth();
+      expect(payload).toMatchObject({
         status: 'ok',
         service: 'appointment-api',
       });
+      expect(typeof payload.timestamp).toBe('string');
+      expect(new Date(payload.timestamp).toISOString()).toBe(payload.timestamp);
     });
   });
 });
