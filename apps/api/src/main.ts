@@ -38,6 +38,28 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api/docs', app, document);
 
+  const httpAdapter = app.getHttpAdapter();
+  const healthPayload = {
+    status: 'ok',
+    service: 'appointment-api',
+  };
+
+  httpAdapter.get('/', (_req, res) => {
+    httpAdapter.reply(
+      res,
+      {
+        ...healthPayload,
+        docs: '/api/docs',
+        health: '/health',
+      },
+      200,
+    );
+  });
+
+  httpAdapter.get('/health', (_req, res) => {
+    httpAdapter.reply(res, healthPayload, 200);
+  });
+
   const port = Number(process.env.PORT ?? 3000);
   await app.listen(port);
 }

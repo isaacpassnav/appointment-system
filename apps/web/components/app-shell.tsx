@@ -33,7 +33,7 @@ import {
   HelpCircle,
   Mail,
 } from "lucide-react";
-import { NavbarItem } from "./navbar-item";
+import { NavbarItem, type NavbarItemType } from "./navbar-item";
 import { DollarSign as FaDollarSign } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/providers/auth-provider";
@@ -108,8 +108,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/contact", label: "Contact Us", icon: Mail },
     { href: "/api", label: "API & Dev Tools", icon: Code2 },
   ];
-
-  type NavbarItemType = any; // From navbar-item
 
   const navLinks: NavbarItemType[] = [
     { href: "/", label: t("nav.home") || "Home" },

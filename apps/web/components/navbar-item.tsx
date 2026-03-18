@@ -33,7 +33,7 @@ interface NavDropdown {
   solutionsLayout?: boolean;
 }
 
-type NavbarItemType = NavItem | NavDropdown;
+export type NavbarItemType = NavItem | NavDropdown;
 
 interface NavbarItemProps {
   item: NavbarItemType;

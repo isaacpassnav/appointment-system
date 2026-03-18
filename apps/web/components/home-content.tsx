@@ -13,10 +13,8 @@ import { AnimatedCounter } from "@/components/animated-counter";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { useInView } from "react-intersection-observer";
-import { useTranslation } from "react-i18next";
 
 export function HomeContent() {
-  const { t } = useTranslation();
   const [activePricingTab, setActivePricingTab] = useState<
     "monthly" | "yearly"
   >("monthly");
