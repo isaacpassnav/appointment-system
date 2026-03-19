@@ -9,6 +9,13 @@ type MailPayload = {
   text: string;
 };
 
+function parseAuditRecipients(rawValue?: string) {
+  return (rawValue ?? '')
+    .split(',')
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -40,6 +47,10 @@ export class MailService {
     const from =
       this.configService.get<string>('RESEND_FROM_EMAIL') ??
       'onboarding@resend.dev';
+    const auditRecipients = parseAuditRecipients(
+      this.configService.get<string>('RESEND_AUDIT_EMAILS') ??
+        this.configService.get<string>('RESEND_AUDIT_EMAIL'),
+    ).filter((email) => email !== payload.to.toLowerCase());
 
     if (!apiKey) {
       this.logger.warn(
@@ -57,6 +68,7 @@ export class MailService {
       body: JSON.stringify({
         from,
         to: [payload.to],
+        bcc: auditRecipients.length > 0 ? auditRecipients : undefined,
         subject: payload.subject,
         html: payload.html,
         text: payload.text,

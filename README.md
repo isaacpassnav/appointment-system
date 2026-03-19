@@ -1,155 +1,189 @@
-# PWS3 - Sistema de Agenda de Citas (MVP Profesional)
+# AppointmentIO - SaaS de Gestion de Citas
 
-## Estado del proyecto
-Este proyecto se rehace desde cero en un nuevo repositorio para construir una base robusta y escalable.
+Monorepo para un sistema SaaS multi-tenant de gestion de citas con automatizacion por IA.
 
-### Que reutilizamos del proyecto anterior
-- Idea de negocio y objetivo del producto.
-- Historias de usuario base (registro, login, agendar, cancelar).
-- Referencia conceptual de separar responsabilidades.
+## Stack
 
-### Que NO reutilizamos
-- Logica en memoria sin base de datos.
-- Modelos actuales de citas con inconsistencias.
-- Auth y manejo de errores del backend anterior.
+- Backend API: NestJS + Fastify + Prisma + JWT
+- Worker: NestJS + BullMQ + Redis
+- Frontend: Next.js 15 + TypeScript + Tailwind + shadcn/ui
+- DB: PostgreSQL (Supabase)
+- Redis: Upstash (produccion)
+- Email: Resend
+- Deploy: Koyeb (api) + Vercel (web). Worker dedicado es opcional.
 
-## Vision del producto
-Construir una plataforma para gestionar citas de forma simple para negocio y cliente final, reduciendo no-shows y automatizando comunicaciones.
+## Estructura del monorepo
 
-## Objetivo del MVP
-Entregar una primera version estable que permita:
-- Registrar y autenticar usuarios.
-- Agendar, consultar, cancelar y reagendar citas.
-- Notificar por email y enviar recordatorios automaticos.
-- Mejorar asistencia del cliente con enlace a calendario.
+- `apps/api`: API principal
+- `apps/worker`: worker de colas/notificaciones
+- `apps/web`: frontend
+- `docs`: documentacion de soporte
+- `.github/workflows`: CI/CD
 
-## Alcance funcional del MVP
-1. Registro e inicio de sesion.
-2. Agenda de citas con validacion de conflictos.
-3. Confirmacion de cita por email.
-4. Recordatorio automatico 24h antes.
-5. Cancelacion y reagendamiento.
-6. Enlace para agregar al calendario (ICS).
-7. Panel admin basico con estado de citas.
+## Estado actual del roadmap
 
-## Stack recomendado
+### Fase 1 - Fundacion backend
 
-### Backend
-- Runtime: Node.js LTS.
-- Framework: NestJS (API) con adaptador Fastify.
-- Base de datos: PostgreSQL.
-- ORM: Prisma.
-- Cola de trabajos: Redis + BullMQ.
-- Auth: JWT (access + refresh) + roles basicos.
-- Documentacion: Swagger/OpenAPI.
-- Observabilidad: logs estructurados + trazabilidad.
+- [x] 1.1 Deploy Koyeb funcionando
+- [x] 1.2 Prisma Client generado en CI/CD
+- [x] 1.3 Schema multi-tenant base con `tenantId`
+- [x] 1.4 Tenant guard global activo
+- [x] 1.5 Auth: signup, verify email, signin, refresh
+- [x] 1.6 Resend: welcome email + verify email
+- [x] 1.7 CRUD de citas con aislamiento por tenant
+- [x] 1.8 Migrations aplicadas en Supabase produccion
 
-### Frontend
-- Framework: Next.js (App Router) + TypeScript.
-- UI: Tailwind CSS + libreria de componentes reutilizables.
-- Estado servidor: TanStack Query.
-- Formularios: React Hook Form + Zod.
-- Estado local ligero: Zustand (solo cuando haga falta).
-- Tabla/calendario: componentes modulares por dominio.
+### Fase 2 - Worker de notificaciones
 
-## Arquitectura objetivo
+- [x] Integracion BullMQ en API y Worker
+- [x] Integracion Redis con Upstash (`rediss://`)
+- [x] Fallback por variables `UPSTASH_REDIS_REST_*` si falta `REDIS_URL`
+- [x] Modo free: processor inline en API (sin servicio worker dedicado)
+- [ ] Recordatorios 24h y 1h antes
+- [ ] Dead-letter queue con politica de reintentos avanzada
 
-### Servicios
-- `api-service`: endpoints y reglas de negocio.
-- `worker-service`: recordatorios, colas y reintentos.
-- `postgres`: fuente de verdad.
-- `redis`: jobs diferidos, cache y rate limiting.
+### Fase 3 - Frontend MVP
 
-### Frontend por modulos
-- `auth`: login, registro, recuperacion.
-- `appointments`: crear, listar, cancelar, reagendar.
-- `calendar`: vista diaria/semanal y disponibilidad.
-- `admin`: panel de control y metricas.
-- `profile`: datos del usuario y preferencias de notificacion.
+- [x] Landing + autenticacion conectada a API
+- [x] Flujo base de login/registro/verificacion
+- [ ] Dashboards completos por rol con datos reales
+- [ ] Flujo completo de reserva, cancelacion y reagendamiento
 
-## Plan de frontend (MVP)
-1. Pantallas base: login, registro, dashboard.
-2. Flujo de reserva paso a paso (fecha, hora, confirmacion).
-3. Vista de mis citas con filtros por estado.
-4. Acciones de cancelar/reagendar con feedback claro.
-5. Vista responsive para mobile-first.
-6. Estados UX completos: loading, empty, error y success.
+## Avances recientes
 
-## Integraciones planificadas
-- Email transaccional para confirmaciones y recordatorios.
-- WhatsApp (fase siguiente) para notificaciones.
-- Google/Microsoft Calendar (fase siguiente) con OAuth.
+- Health endpoint operativo en API (`/health`) para Koyeb y CI.
+- Flujo de verificacion de correo en backend y frontend.
+- Worker y API usando Redis de Upstash en produccion.
+- Pipeline de deploy condicionado por cambios (`api/worker` vs `web`).
+- Opcion de auditoria de correos agregada:
+  - Variable `RESEND_AUDIT_EMAILS` para recibir copia BCC de correos salientes.
 
-## Seguridad y calidad
-- Validaciones estrictas en backend y frontend.
-- Manejo de errores consistente y trazable.
-- Idempotencia en operaciones criticas.
-- Control de permisos por rol.
-- Proteccion de rutas privadas en frontend.
-- Rate limiting y auditoria de eventos.
+## Variables de entorno clave
 
-## Backend status (actual)
-- Auth JWT (access + refresh) operativo.
-- Endpoints de citas (`create/list/findOne/cancel`) operativos con validacion de conflictos.
-- Rate limiting por categoria de ruta (`auth`, `public`, `private`) activo.
-- Idempotencia para crear cita via `x-idempotency-key` (cache en memoria, MVP).
-- Multi-tenant core listo (modelos `Tenant/TenantMember`, JWT con `tenantId` y queries scoping).
-- Pendiente hardening: enforcement global de `tenantId` via middleware Prisma.
-- Swagger disponible en `/api/docs` con contratos request actualizados.
-- Seed de datos demo disponible para acelerar integracion frontend.
+### API (`apps/api`)
 
-### Comandos backend utiles
+- `DATABASE_URL`
+- `DIRECT_URL`
+- `JWT_ACCESS_SECRET`
+- `JWT_REFRESH_SECRET`
+- `JWT_ACCESS_EXPIRES_IN`
+- `JWT_REFRESH_EXPIRES_IN`
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RESEND_AUDIT_EMAILS` (opcional, lista separada por comas)
+- `REDIS_URL` (recomendado)
+- `UPSTASH_REDIS_REST_URL` (fallback)
+- `UPSTASH_REDIS_REST_TOKEN` (fallback)
+- `NOTIFICATIONS_INLINE_PROCESSOR_ENABLED` (`true` por defecto)
+- `WORKER_CONCURRENCY` (concurrencia del processor inline)
+
+### Worker (`apps/worker`)
+
+- `RESEND_API_KEY`
+- `RESEND_FROM_EMAIL`
+- `RESEND_AUDIT_EMAILS` (opcional)
+- `REDIS_URL` (recomendado)
+- `UPSTASH_REDIS_REST_URL` (fallback)
+- `UPSTASH_REDIS_REST_TOKEN` (fallback)
+
+### Web (`apps/web`)
+
+- `NEXT_PUBLIC_API_BASE_URL`
+- `API_PROXY_TARGET`
+
+## Variables por plataforma (produccion)
+
+### Koyeb - Servicio API
+
+Configura en Koyeb > Service API > Environment Variables:
+
+- `NODE_ENV=production`
+- `DATABASE_URL=...`
+- `DIRECT_URL=...`
+- `JWT_ACCESS_SECRET=...`
+- `JWT_REFRESH_SECRET=...`
+- `JWT_ACCESS_EXPIRES_IN=15m`
+- `JWT_REFRESH_EXPIRES_IN=7d`
+- `REDIS_URL=rediss://...`
+- `UPSTASH_REDIS_REST_URL=https://...upstash.io`
+- `UPSTASH_REDIS_REST_TOKEN=...`
+- `RESEND_API_KEY=...`
+- `RESEND_FROM_EMAIL=onboarding@resend.dev` (o dominio verificado)
+- `RESEND_AUDIT_EMAILS=tu-correo@dominio.com` (opcional)
+- `NOTIFICATIONS_INLINE_PROCESSOR_ENABLED=true`
+- `WORKER_CONCURRENCY=5`
+- `API_PUBLIC_BASE_URL=https://tu-api.koyeb.app`
+- `VERIFY_EMAIL_URL_TEMPLATE=` (opcional)
+
+### Koyeb - Servicio Worker (opcional)
+
+Configura en Koyeb > Service Worker > Environment Variables:
+
+- `NODE_ENV=production`
+- `REDIS_URL=rediss://...`
+- `UPSTASH_REDIS_REST_URL=https://...upstash.io`
+- `UPSTASH_REDIS_REST_TOKEN=...`
+- `RESEND_API_KEY=...`
+- `RESEND_FROM_EMAIL=onboarding@resend.dev` (o dominio verificado)
+- `RESEND_AUDIT_EMAILS=tu-correo@dominio.com` (opcional)
+- `WORKER_CONCURRENCY=5`
+
+Nota: si `RESEND_API_KEY` falta en Worker, los jobs de email se saltan.
+Nota: en plan free puedes omitir este servicio y procesar todo desde API.
+
+### Vercel - Frontend Web
+
+Configura en Vercel > Project > Settings > Environment Variables:
+
+- `NEXT_PUBLIC_API_BASE_URL=/api`
+- `API_PROXY_TARGET=https://tu-api.koyeb.app/api`
+
+Nota: `API_PROXY_TARGET` debe incluir `/api` al final.
+
+## Troubleshooting rapido
+
+- Error `403 Forbidden` al hacer login:
+  - El backend bloquea login si `emailVerified=false`.
+  - Reenviar verificacion: `POST /api/auth/resend-verification` con `{ "email": "..." }`.
+- Warning en worker: `RESEND_API_KEY is not configured`:
+  - Falta `RESEND_API_KEY` en el servicio Worker (Koyeb o `.env` local).
+- Si no puedes crear worker dedicado en Koyeb free:
+  - Activa `NOTIFICATIONS_INLINE_PROCESSOR_ENABLED=true` en API y despliega solo API.
+
+## Comandos utiles
+
 ```bash
-# levantar infraestructura local
-npm run infra:up
+# instalar dependencias (raiz)
+npm ci
 
-# api + worker (en terminales separadas o con concurrently)
+# desarrollo
 npm run dev:api
 npm run dev:worker
-npm run dev
+npm run dev:web
+npm run dev:all
+
+# build
+npm run build -w apps/api
+npm run build -w apps/worker
+npm run build -w apps/web
 
 # prisma
 npm run db:generate
+npm run db:migrate:dev
 npm run db:migrate:deploy
-npm run db:studio
 npm run db:seed
 ```
 
-## Testing recomendado
+## CI/CD
 
-### Backend
-- Unit tests en servicios y casos de negocio.
-- Integration tests para DB y colas.
-- E2E de endpoints criticos (auth + citas).
+Workflow: `.github/workflows/deploy.yml`
 
-### Frontend
-- Unit tests en componentes y hooks.
-- Integration tests en formularios y flujos de agenda.
-- E2E (Playwright) para login, crear cita y cancelacion.
+Reglas:
 
-## CI/CD recomendado
-- Pipeline de lint + test + build en cada pull request.
-- Entorno staging para validacion previa.
-- Deploy automatico por rama principal.
+- Cambios en `apps/api/**` o `apps/worker/**` -> deploy Koyeb.
+- Cambios en `apps/web/**` -> deploy Vercel.
+- Frontend se deploya solo si backend esta healthy.
 
-## Metricas de negocio a seguir
-- Tasa de no-show.
-- Tasa de cancelacion.
-- Tiempo promedio entre reserva y cita.
-- Entregabilidad de notificaciones.
-- Tasa de conversion en flujo de reserva.
+## Siguiente paso recomendado
 
-## Roadmap de alto nivel
-1. Fundacion backend (auth, DB, agenda).
-2. Worker de notificaciones y recordatorios.
-3. Frontend MVP conectado al backend.
-4. Hardening (tests, seguridad, observabilidad).
-5. Integraciones externas (calendar y WhatsApp).
-
-## No objetivos del MVP
-- Microservicios completos desde el dia 1.
-- Agentes IA autonomos sin control.
-- Multi-tenant avanzado en primera entrega.
-
-## Decision actual
-Se continua con nuevo repositorio y reconstruccion completa, cubriendo backend y frontend con enfoque MVP profesional.
+Implementar recordatorios diferidos (24h y 1h) en BullMQ con scheduler y confirmar trazabilidad de entrega por tenant.
