@@ -15,10 +15,10 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
       frontend: ${{ steps.filter.outputs.frontend }}
     steps:
-      - name: "📥 Checkout"
+      - name: "Checkout"
         uses: actions/checkout@v4
 
-      - name: "🔍 Detect changed paths"
+      - name: "Detect changed paths"
         id: filter
         uses: dorny/paths-filter@v3
         with:
@@ -29,21 +29,21 @@ jobs:
             frontend:
               - 'apps/web/**'
 
-      - name: "🧾 Log changed scopes"
+      - name: "Log changed scopes"
         run: |
           echo "backend=${{ steps.filter.outputs.backend }}"
           echo "frontend=${{ steps.filter.outputs.frontend }}"
           if [ "${{ steps.filter.outputs.backend }}" != "true" ]; then
-            echo "⏭️ No backend changes detected: deploy-backend will be skipped."
+            echo "No backend changes detected: deploy-backend will be skipped."
           fi
           if [ "${{ steps.filter.outputs.frontend }}" != "true" ]; then
-            echo "⏭️ No frontend changes detected: deploy-frontend will be skipped."
+            echo "No frontend changes detected: deploy-frontend will be skipped."
           fi
 
   validate:
     runs-on: ubuntu-latest
     steps:
-      - name: "📥 Checkout"
+      - name: "Checkout"
         uses: actions/checkout@v4
 
       - name: "🟢 Setup Node.js 20"
@@ -52,10 +52,10 @@ jobs:
           node-version: '20'
           cache: npm
 
-      - name: "📦 Install dependencies"
+      - name: "Install dependencies"
         run: npm ci
 
-      - name: "🔎 Detect lint script"
+      - name: "Detect lint script"
         id: lint-check
         run: |
           if node -e "const p=require('./package.json'); process.exit(p?.scripts?.lint ? 0 : 1)"; then
@@ -64,18 +64,18 @@ jobs:
             echo "has_lint=false" >> "$GITHUB_OUTPUT"
           fi
 
-      - name: "🧹 Run lint"
+      - name: "Run lint"
         if: steps.lint-check.outputs.has_lint == 'true'
         run: npm run lint
 
-      - name: "⏭️ Skip lint (script not found)"
+      - name: "Skip lint (script not found)"
         if: steps.lint-check.outputs.has_lint != 'true'
         run: echo "No lint script found in root package.json. Skipping lint without failing."
 
-      - name: "🧠 Typecheck backend (apps/api)"
+      - name: "Typecheck backend (apps/api)"
         run: npx tsc --noEmit -p apps/api/tsconfig.json
 
-      - name: "🧠 Typecheck frontend (apps/web)"
+      - name: "Typecheck frontend (apps/web)"
         run: npx tsc --noEmit -p apps/web/tsconfig.json
 
   deploy-backend:
@@ -85,7 +85,7 @@ jobs:
       - validate
     if: needs.validate.result == 'success' && needs.detect-changes.outputs.backend == 'true'
     steps:
-      - name: "🚀 Redeploy API service on Koyeb"
+      - name: "Redeploy API service on Koyeb"
         env:
           KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
           KOYEB_API_SERVICE_ID: ${{ secrets.KOYEB_API_SERVICE_ID }}
@@ -96,15 +96,15 @@ jobs:
             --header "Authorization: Bearer ${KOYEB_API_TOKEN}" \
             --header "Content-Type: application/json" \
             --data '{}'
-          echo "✅ API redeploy triggered."
+          echo "API redeploy triggered."
 
-      - name: "🚀 Redeploy Worker service on Koyeb"
+      - name: "Redeploy Worker service on Koyeb"
         env:
           KOYEB_API_TOKEN: ${{ secrets.KOYEB_API_TOKEN }}
           KOYEB_WORKER_SERVICE_ID: ${{ secrets.KOYEB_WORKER_SERVICE_ID }}
         run: |
           if [ -z "${KOYEB_WORKER_SERVICE_ID}" ]; then
-            echo "⏭️ Worker service ID not set. Skipping."
+            echo "Worker service ID not set. Skipping."
             exit 0
           fi
           curl --fail-with-body --silent --show-error \
@@ -113,9 +113,9 @@ jobs:
             --header "Authorization: Bearer ${KOYEB_API_TOKEN}" \
             --header "Content-Type: application/json" \
             --data '{}'
-          echo "✅ Worker redeploy triggered."
+          echo "Worker redeploy triggered."
 
-      - name: "⏱️ Wait for Koyeb rollout to initialize"
+      - name: "Wait for Koyeb rollout to initialize"
         run: sleep 30
 
   health-check:
@@ -126,14 +126,14 @@ jobs:
       - deploy-backend
     if: always() && needs.validate.result == 'success'
     steps:
-      - name: "ℹ️ Log backend deploy status"
+      - name: "Log backend deploy status"
         run: |
           echo "deploy-backend result: ${{ needs.deploy-backend.result }}"
           if [ "${{ needs.deploy-backend.result }}" = "skipped" ]; then
-            echo "⏭️ Backend deploy skipped. Verifying current backend health before frontend deploy."
+            echo "Backend deploy skipped. Verifying current backend health before frontend deploy."
           fi
 
-      - name: "❌ Fail if backend deploy job failed"
+      - name: "Fail if backend deploy job failed"
         if: needs.deploy-backend.result == 'failure'
         run: |
           echo "deploy-backend failed, blocking frontend deploy."
@@ -166,7 +166,7 @@ jobs:
       - health-check
     if: needs.validate.result == 'success' && needs.health-check.result == 'success' && needs.detect-changes.outputs.frontend == 'true'
     steps:
-      - name: "🚀 Trigger Vercel deploy hook"
+      - name: "Trigger Vercel deploy hook"
         env:
           VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: |

@@ -12,7 +12,7 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { TenantRole, UserRole } from '@prisma/client';
 import bcrypt from 'bcrypt';
-import { MailService } from '../mail/mail.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { UsersService } from '../users/users.service';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { SignInDto } from './dto/sign-in.dto';
@@ -27,7 +27,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
-    private readonly mailService: MailService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async signUp(dto: SignUpDto) {
@@ -217,8 +217,12 @@ export class AuthService {
     const verificationToken = await this.issueEmailVerificationToken(user.id);
     const verifyUrl = this.buildVerifyUrl(verificationToken);
 
-    void this.mailService
-      .sendVerifyEmail(user.email, user.fullName, verifyUrl)
+    void this.notificationsService
+      .enqueueVerifyEmail({
+        to: user.email,
+        fullName: user.fullName,
+        verifyUrl,
+      })
       .catch((error: unknown) => {
         const message = error instanceof Error ? error.message : String(error);
         this.logger.error(`Failed to resend verification email: ${message}`);
@@ -443,12 +447,15 @@ export class AuthService {
     verifyUrl: string;
   }) {
     void Promise.allSettled([
-      this.mailService.sendWelcomeEmail(params.email, params.fullName),
-      this.mailService.sendVerifyEmail(
-        params.email,
-        params.fullName,
-        params.verifyUrl,
-      ),
+      this.notificationsService.enqueueWelcomeEmail({
+        to: params.email,
+        fullName: params.fullName,
+      }),
+      this.notificationsService.enqueueVerifyEmail({
+        to: params.email,
+        fullName: params.fullName,
+        verifyUrl: params.verifyUrl,
+      }),
     ]).then((results) => {
       for (const result of results) {
         if (result.status === 'rejected') {

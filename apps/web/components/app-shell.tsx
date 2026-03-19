@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import AOS from "aos";
 import {
   FaGithub,
   FaInstagram,
@@ -135,15 +134,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isAuthenticated = status === "authenticated" && !!user;
 
   useEffect(() => {
-    AOS.init({
-      once: true,
-      duration: 700,
-      easing: "ease-out-cubic",
-      offset: 80,
-    });
-  }, []);
-
-  useEffect(() => {
     if (typeof window === "undefined") return;
     if ("scrollRestoration" in window.history) {
       window.history.scrollRestoration = "manual";
@@ -225,7 +215,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <main className="container page-content">{children}</main>
 
-      <footer className="footer" data-aos="fade-up">
+      <footer className="footer">
         <div className="container footer-grid">
           <div className="footer-brand">
             <p className="brand">AppointmentOS</p>

@@ -94,12 +94,6 @@ export function HomeContent() {
   const demoRef = useInView({ threshold: 0.2 }).ref;
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-    }
-  }, []);
-
-  useEffect(() => {
     const timer = setInterval(() => {
       setActiveHeroWord((prev) => (prev + 1) % heroWords.length);
     }, 3000);
