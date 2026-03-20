@@ -1,487 +1,484 @@
-"use client";
+'use client';
 
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { FaCalendarCheck, FaRobot, FaDog, FaCheck } from "react-icons/fa6";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { FeaturesCard } from "@/components/features-card";
-import { IntegrationRow } from "@/components/integration-row";
-import { PricingCard } from "@/components/pricing-card";
-import { AnimatedCounter } from "@/components/animated-counter";
-import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
-import { useInView } from "react-intersection-observer";
+import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
+import { useTranslation } from 'react-i18next';
+import { AnimatedCounter } from '@/components/animated-counter';
+import { IntegrationRow } from '@/components/integration-row';
+import { PricingCard } from '@/components/pricing-card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Card, CardContent } from '@/components/ui/card';
+
+type ImpactStat = { value: string; label: string };
+type ModuleItem = { label: string; detail: string };
+type RoadmapItem = { step: string; title: string; detail: string };
+type TestimonialItem = { name: string; role: string; quote: string };
+type FaqItem = { value: string; question: string; answer: string };
+
+type ParsedMetric = {
+  value: number;
+  prefix?: string;
+  suffix?: string;
+};
+
+function parseMetric(raw: string): ParsedMetric {
+  const trimmed = raw.trim();
+  const matched = trimmed.match(/^([+-]?)(\d+(?:\.\d+)?)(.*)$/);
+  if (!matched) {
+    return { value: 0, suffix: trimmed };
+  }
+
+  const sign = matched[1];
+  const numeric = Number(matched[2]);
+  const suffix = matched[3] || undefined;
+  const value = sign === '-' ? -numeric : numeric;
+
+  return {
+    value,
+    prefix: sign === '+' ? '+' : undefined,
+    suffix,
+  };
+}
+
+const businessChartData = [
+  { period: 'W1', subscriptions: 18, reseller: 8, payments: 82 },
+  { period: 'W2', subscriptions: 22, reseller: 11, payments: 86 },
+  { period: 'W3', subscriptions: 27, reseller: 16, payments: 91 },
+  { period: 'W4', subscriptions: 34, reseller: 21, payments: 95 },
+  { period: 'W5', subscriptions: 38, reseller: 27, payments: 99 },
+];
 
 export function HomeContent() {
-  const [activePricingTab, setActivePricingTab] = useState<
-    "monthly" | "yearly"
-  >("monthly");
+  const { t, i18n } = useTranslation();
   const [activeHeroWord, setActiveHeroWord] = useState(0);
-  const heroWords = ["Intelligent", "Automated", "Scalable", "Effortless"];
+  const [activeTestimonial, setActiveTestimonial] = useState(0);
+  const [activePricingTab, setActivePricingTab] = useState<'monthly' | 'yearly'>(
+    'monthly',
+  );
 
-  const features = [
-    {
-      icon: "text-blue-400",
-      title: "Smart Appointment Scheduling",
-      description:
-        "Conflict-free booking with real-time availability. Embeddable calendar reduces no-shows.",
-      points: [
-        "24/7 availability checker",
-        "Team scheduling",
-        "ICS/Google Calendar export",
-      ],
-    },
-    {
-      icon: "text-green-400",
-      title: "Automated Reminders",
-      description:
-        "Send email/SMS reminders 24h before appointments. Reduce no-shows by 40%.",
-      points: [
-        "Customizable templates",
-        "Multi-channel delivery",
-        "Analytics tracking",
-      ],
-    },
-    {
-      icon: "text-purple-400",
-      title: "AI Customer Support",
-      description:
-        "Intelligent chatbots handle inquiries, booking assistance, and follow-ups.",
-      points: [
-        "24/7 AI responses",
-        "Escalation to human",
-        "Conversation analytics",
-      ],
-    },
-    {
-      icon: "text-orange-400",
-      title: "Business Automation",
-      description:
-        "Automate sales pipelines, lead nurturing, and customer workflows.",
-      points: ["Sales automation flows", "Lead scoring", "CRM integrations"],
-    },
-    {
-      icon: "text-teal-400",
-      title: "Website Builder",
-      description:
-        "Embeddable booking pages with your branding. No coding required.",
-      points: ["Custom domains", "Payment integration", "Conversion analytics"],
-    },
-    {
-      icon: "text-indigo-400",
-      title: "Workflow Automation",
-      description:
-        "Custom workflows for any business process. Connect everything.",
-      points: ["No-code builder", "100+ triggers/actions", "Advanced logic"],
-    },
-  ];
-
+  const heroWords = t('home.heroWords', { returnObjects: true }) as string[];
+  const tags = t('home.tags', { returnObjects: true }) as string[];
+  const sectors = t('home.sectors', { returnObjects: true }) as string[];
+  const impactStats = t('home.impactStats', {
+    returnObjects: true,
+  }) as ImpactStat[];
+  const modules = t('home.modules', { returnObjects: true }) as ModuleItem[];
+  const roadmap = t('home.roadmap', { returnObjects: true }) as RoadmapItem[];
+  const testimonials = t('home.testimonials', {
+    returnObjects: true,
+  }) as TestimonialItem[];
+  const faqs = t('home.faqs', { returnObjects: true }) as FaqItem[];
   const pricingFeatures = [
-    { text: "Core scheduling", allTiers: true },
-    { text: "Email reminders", allTiers: false },
-    { text: "Basic analytics", allTiers: false },
-    { text: "Team management", allTiers: false },
-    { text: "AI chatbots", allTiers: false },
-    { text: "Unlimited workflows", allTiers: false },
-    { text: "Priority support", allTiers: false },
-    { text: "Custom integrations", allTiers: false },
+    { text: 'Core scheduling', allTiers: true },
+    { text: 'Multi-tenant isolation', allTiers: true },
+    { text: 'Email reminders', allTiers: false },
+    { text: 'AI assistant context', allTiers: false },
+    { text: 'Reseller controls', allTiers: false },
+    { text: 'Priority support', allTiers: false },
   ];
 
-  const heroRef = useInView({ threshold: 0.3 }).ref;
-  const featuresRef = useInView({ threshold: 0.2 }).ref;
-  const demoRef = useInView({ threshold: 0.2 }).ref;
+  const integrationCopy =
+    i18n.resolvedLanguage === 'es'
+      ? {
+          title: 'Integraciones que conectan todo',
+          subtitle:
+            'Conecta canales clave como WhatsApp, email, Telegram, pagos y calendario en un solo flujo operativo.',
+        }
+      : i18n.resolvedLanguage === 'pt'
+        ? {
+            title: 'Integracoes que conectam tudo',
+            subtitle:
+              'Conecte canais essenciais como WhatsApp, email, Telegram, pagamentos e calendario em um unico fluxo.',
+          }
+        : {
+            title: 'Integrations that connect everything',
+            subtitle:
+              'Plug channels like WhatsApp, email, Telegram, payments, and calendar into one operational flow.',
+          };
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    if (!heroWords.length) return;
+    const timer = window.setInterval(() => {
       setActiveHeroWord((prev) => (prev + 1) % heroWords.length);
-    }, 3000);
-    return () => clearInterval(timer);
-  }, [heroWords.length]);
+    }, 2600);
+    return () => window.clearInterval(timer);
+  }, [heroWords]);
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  };
+  useEffect(() => {
+    if (testimonials.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setActiveTestimonial((prev) => (prev + 1) % testimonials.length);
+    }, 3600);
+    return () => window.clearInterval(timer);
+  }, [testimonials.length]);
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0 },
-  };
+  const visibleTestimonials = useMemo(() => {
+    if (!testimonials.length) return [];
+    const items: TestimonialItem[] = [];
+    for (let i = 0; i < Math.min(3, testimonials.length); i += 1) {
+      const index = (activeTestimonial + i) % testimonials.length;
+      items.push(testimonials[index]);
+    }
+    return items;
+  }, [activeTestimonial, testimonials]);
 
   return (
-    <main className="space-y-24 py-12">
-      {/* Hero */}
-      <section id="product" ref={heroRef} className="container">
+    <main className="space-y-16 py-10">
+      <section className="container">
         <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center"
+          className="hero-combo"
         >
-          <motion.div variants={itemVariants}>
-            <p className="eyebrow mb-6">The Modern Scheduling Platform</p>
-            <h1 className="hero-title mb-6">
-              AppointmentOS — AI-Powered{" "}
-              <span className="hero-word" key={activeHeroWord}>
-                {heroWords[activeHeroWord]}
-              </span>{" "}
-              Scheduling & Business Automation
+          <CardContent className="hero-combo-content">
+            <p className="eyebrow">{t('home.eyebrow')}</p>
+            <h1 className="hero-title">
+              {t('home.titlePrefix')}{' '}
+              <span className="hero-word">{heroWords[activeHeroWord] ?? 'Intelligent'}</span>{' '}
+              {t('home.titleSuffix')}
             </h1>
-            <p className="hero-sub max-w-2xl mx-auto mb-8">
-              Schedule appointments, automate workflows, scale business. Reduce
-              no-shows 40% smart reminders + AI support. Integrates entire
-              stack.
-            </p>
-            <div className="hero-actions mb-12 flex flex-col sm:flex-row gap-4 justify-center">
-              <Button size="lg" asChild className="px-8 font-bold shadow-lg">
-                <Link href="/signup">Start Free</Link>
+            <p className="hero-sub">{t('home.subtitle')}</p>
+            <div className="hero-actions">
+              <Button size="lg" asChild>
+                <Link href="/signup">{t('home.ctaPrimary')}</Link>
               </Button>
-              <Button variant="outline" size="lg" asChild>
-                <Link href="/dashboard">Book Demo</Link>
+              <Button size="lg" variant="outline" asChild>
+                <Link href="/dashboard">{t('home.ctaSecondary')}</Link>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-3 justify-center">
-              <Badge variant="secondary">24/7 Support</Badge>
-              <Badge variant="secondary">SOC 2 Compliant</Badge>
-              <Badge variant="secondary">99.99% Uptime</Badge>
+            <div className="hero-tags">
+              {tags.map((tag) => (
+                <Badge key={tag} variant="secondary">
+                  {tag}
+                </Badge>
+              ))}
             </div>
-          </motion.div>
+          </CardContent>
         </motion.div>
       </section>
 
-      {/* Social Proof */}
-      <section className="logos-section container py-20">
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          className="logos-grid"
-        >
-          <div className="logo-item">Stripe</div>
-          <div className="logo-item">Notion</div>
-          <div className="logo-item">Linear</div>
-          <div className="logo-item">Vercel</div>
-          <div className="logo-item">HubSpot</div>
-          <div className="logo-item">Shopify</div>
-        </motion.div>
+      <section className="container impact-section rounded-3xl bg-card/50 p-6 sm:p-8">
+        <div className="section-head">
+          <h2 className="text-3xl font-bold">{t('home.impactTitle')}</h2>
+          <p className="muted">{t('home.impactSubtitle')}</p>
+        </div>
+        <div className="impact-grid">
+          {impactStats.map((stat) => {
+            const metric = parseMetric(stat.value);
+            return (
+              <article key={stat.label} className="kpi">
+                <strong className="kpi-value">
+                  <AnimatedCounter
+                    value={metric.value}
+                    prefix={metric.prefix}
+                    suffix={metric.suffix}
+                    duration={1.8}
+                  />
+                </strong>
+                <span className="kpi-label">{stat.label}</span>
+              </article>
+            );
+          })}
+        </div>
       </section>
 
-      {/* Features */}
-      <section id="features" ref={featuresRef} className="container">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          className="text-center mb-20"
-        >
-          <motion.h2 variants={itemVariants} className="hero-title mb-6">
-            Everything You Need
-          </motion.h2>
-          <motion.p
-            variants={itemVariants}
-            className="hero-sub max-w-2xl mx-auto"
-          >
-            Powerful features for modern business.
-          </motion.p>
-        </motion.div>
-        <div className="features-grid">
-          {features.map((feature, index) => (
-            <FeaturesCard
-              key={feature.title}
-              feature={feature}
-              index={index}
-              className="h-full"
+      <section className="container sector-strip rounded-3xl p-5">
+        <p className="eyebrow mb-3">{t('home.sectorsTitle')}</p>
+        <div className="ticker">
+          <div className="ticker-track">
+            {[...sectors, ...sectors].map((item, idx) => (
+              <span key={`${item}-${idx}`} className="ticker-item">
+                {item}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section
+        id="integrations"
+        className="container rounded-3xl border border-border/60 bg-card/50 p-6 sm:p-8"
+      >
+        <div className="section-head">
+          <h2 className="text-3xl font-bold">{integrationCopy.title}</h2>
+          <p className="muted">{integrationCopy.subtitle}</p>
+        </div>
+        <IntegrationRow />
+      </section>
+
+      <section className="container split-grid">
+        <Card className="p-6 md:p-8">
+          <div className="section-head">
+            <h3 className="text-2xl font-bold">{t('home.modulesTitle')}</h3>
+            <p className="muted">{t('home.modulesSubtitle')}</p>
+          </div>
+          <div className="module-list">
+            {modules.map((item) => (
+              <article key={item.label} className="module-item">
+                <p className="module-title">{item.label}</p>
+                <p className="module-detail">{item.detail}</p>
+              </article>
+            ))}
+          </div>
+        </Card>
+
+        <Card className="accent-card p-6 md:p-8">
+          <div className="section-head">
+            <h3 className="text-2xl font-bold">{t('home.businessTitle')}</h3>
+            <p className="muted">{t('home.businessBody')}</p>
+          </div>
+
+          <div className="cta-row">
+            <Button asChild>
+              <Link href="/signup">{t('home.businessPrimary')}</Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href="/dashboard">{t('home.businessSecondary')}</Link>
+            </Button>
+          </div>
+
+          <div className="business-chart">
+            <p className="eyebrow">{t('home.businessChartLabel')}</p>
+            <motion.div
+              aria-hidden={true}
+              className="pointer-events-none absolute inset-x-[-22%] bottom-7 z-0 h-14 rounded-full bg-gradient-to-r from-transparent via-primary/55 to-transparent blur-md"
+              animate={{ x: ['-8%', '12%', '-8%'], y: [0, -6, 0] }}
+              transition={{ duration: 4.4, ease: 'easeInOut', repeat: Infinity }}
             />
+            <motion.div
+              aria-hidden={true}
+              className="pointer-events-none absolute inset-x-[-24%] bottom-[74px] z-0 h-14 rounded-full bg-gradient-to-r from-transparent via-violet-400/45 to-transparent blur-md"
+              animate={{ x: ['8%', '-10%', '8%'], y: [0, -4, 0] }}
+              transition={{ duration: 4.8, ease: 'easeInOut', repeat: Infinity }}
+            />
+            <div className="chart-area">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={businessChartData}>
+                  <defs>
+                    <linearGradient id="subsGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#a855f7" stopOpacity={0.9} />
+                      <stop offset="95%" stopColor="#a855f7" stopOpacity={0.12} />
+                    </linearGradient>
+                    <linearGradient id="resellerGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.85} />
+                      <stop offset="95%" stopColor="#7c3aed" stopOpacity={0.08} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,118,255,0.2)" />
+                  <XAxis dataKey="period" stroke="#b7b3d4" />
+                  <YAxis stroke="#b7b3d4" />
+                  <Tooltip />
+                  <Area
+                    type="monotone"
+                    dataKey="subscriptions"
+                    stroke="#a855f7"
+                    fill="url(#subsGradient)"
+                    animationDuration={1200}
+                    strokeWidth={3}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="reseller"
+                    stroke="#7c3aed"
+                    fill="url(#resellerGradient)"
+                    animationDuration={1800}
+                    strokeWidth={3}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <div className="chart-metrics">
+              <div>
+                <strong>
+                  <AnimatedCounter value={38} prefix="+" suffix="%" />
+                </strong>
+                <span>{t('home.businessMetricA')}</span>
+              </div>
+              <div>
+                <strong>
+                  <AnimatedCounter value={27} suffix="x" />
+                </strong>
+                <span>{t('home.businessMetricB')}</span>
+              </div>
+              <div>
+                <strong>
+                  <AnimatedCounter value={99} suffix="%" />
+                </strong>
+                <span>{t('home.businessMetricC')}</span>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </section>
+
+      <section className="container">
+        <div className="section-head">
+          <h2 className="text-3xl font-bold">{t('home.roadmapTitle')}</h2>
+          <p className="muted">{t('home.roadmapSubtitle')}</p>
+        </div>
+        <div className="roadmap-grid">
+          {roadmap.map((item) => (
+            <article key={item.step} className="roadmap-item">
+              <p className="roadmap-step">{item.step}</p>
+              <h3 className="text-xl font-semibold">{item.title}</h3>
+              <p className="muted">{item.detail}</p>
+            </article>
           ))}
         </div>
       </section>
 
-      {/* Product Demo */}
-      <section ref={demoRef} className="container">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          className="demo-mock lg:grid-cols-2 gap-12 items-center"
-        >
-          <motion.div variants={itemVariants}>
-            <div className="mb-8">
-              <span className="eyebrow">Live Demo</span>
-              <h2 className="text-4xl font-bold mt-4 mb-6">Dashboard Awaits</h2>
-              <p className="hero-sub mb-12">
-                Monitor bookings, revenue, workflows. Beautiful interface.
-              </p>
-            </div>
-            <div className="grid grid-cols-2 gap-6">
-              <div className="kpi text-center p-8 rounded-2xl bg-muted/50 border shadow-lg">
-                <div className="text-4xl font-bold text-primary mb-3">
-                  <AnimatedCounter value={124} />
-                </div>
-                <div>Bookings Today</div>
-              </div>
-              <div className="kpi text-center p-8 rounded-2xl bg-muted/50 border shadow-lg">
-                <div className="text-4xl font-bold text-green-400 mb-3">
-                  <AnimatedCounter value={98} />%
-                </div>
-                <div>Show Rate</div>
-              </div>
-            </div>
-          </motion.div>
-          <motion.div className="order-first lg:order-last">
-            <div className="demo-frame p-8 max-w-lg mx-auto">
-              <div className="space-y-6">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="p-5 rounded-xl bg-muted/30 text-center border">
-                    <div className="text-2xl font-bold mb-1">47</div>
-                    <div className="text-xs uppercase text-muted-foreground">
-                      New Leads
-                    </div>
-                  </div>
-                  <div className="p-5 rounded-xl bg-muted/30 text-center border">
-                    <div className="text-2xl font-bold text-green-400 mb-1">
-                      $2.8k
-                    </div>
-                    <div className="text-xs uppercase text-muted-foreground">
-                      Revenue
-                    </div>
-                  </div>
-                  <div className="p-5 rounded-xl bg-muted/30 text-center border">
-                    <div className="text-2xl font-bold text-orange-400 mb-1">
-                      92%
-                    </div>
-                    <div className="text-xs uppercase text-muted-foreground">
-                      Utilization
-                    </div>
-                  </div>
-                </div>
-                <div className="h-64 bg-gradient-to-r from-muted/20 via-primary/10 to-accent/10 rounded-2xl flex items-center justify-center border-2 border-muted shadow-inner">
-                  <span>📊 Interactive Charts</span>
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      </section>
-
-      {/* Integrations */}
-      <section className="py-24">
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-16"
-          >
-            <h2 className="hero-title mb-6">Works with Everything</h2>
-            <p className="hero-sub max-w-2xl mx-auto">
-              Connect tools in minutes.
-            </p>
-          </motion.div>
-          <div className="integrations-wrapper p-12 rounded-3xl max-w-6xl mx-auto">
-            <IntegrationRow />
-          </div>
-        </div>
-      </section>
-
-      {/* Automation */}
-      <section className="container">
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="show"
-          viewport={{ once: true }}
-          className="text-center mb-20"
-        >
-          <h2 className="hero-title mb-6">Automate Business</h2>
-          <p className="hero-sub max-w-3xl mx-auto">
-            Beyond scheduling - powerful automations 24/7.
-          </p>
-        </motion.div>
-        <div className="automation-grid">
-          <motion.div
-            variants={itemVariants}
-            className="automation-card text-center"
-          >
-            <FaCalendarCheck className="h-20 w-20 text-primary mx-auto mb-8" />
-            <h3 className="text-3xl font-bold mb-6">Customer Support</h3>
-            <p className="text-xl text-muted-foreground mb-8">
-              Auto-respond, book, follow-up.
-            </p>
-            <ul className="space-y-3 text-lg">
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                24/7 booking
-              </li>
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                Smart escalation
-              </li>
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                Satisfaction surveys
-              </li>
-            </ul>
-          </motion.div>
-          <motion.div
-            variants={itemVariants}
-            className="automation-card text-center"
-          >
-            <FaDog className="h-20 w-20 text-primary mx-auto mb-8" />
-            <h3 className="text-3xl font-bold mb-6">Sales Pipelines</h3>
-            <p className="text-xl text-muted-foreground mb-8">
-              Nurture leads, close deals autopilot.
-            </p>
-            <ul className="space-y-3 text-lg">
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                Lead qualification
-              </li>
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                Meeting scheduler
-              </li>
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                Contract workflows
-              </li>
-            </ul>
-          </motion.div>
-          <motion.div
-            variants={itemVariants}
-            className="automation-card text-center"
-          >
-            <FaRobot className="h-20 w-20 text-primary mx-auto mb-8" />
-            <h3 className="text-3xl font-bold mb-6">Lead Follow-ups</h3>
-            <p className="text-xl text-muted-foreground mb-8">
-              Multi-touch sequences convert prospects.
-            </p>
-            <ul className="space-y-3 text-lg">
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                Multi-touch campaigns
-              </li>
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                Behavior triggers
-              </li>
-              <li>
-                <FaCheck className="inline text-green-400 mr-3 h-5 w-5" />
-                Win/loss analysis
-              </li>
-            </ul>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Pricing */}
       <section
         id="pricing"
-        className="py-24 bg-gradient-to-b from-muted/30 to-surface"
+        className="container rounded-3xl border border-border/60 bg-card/50 p-6 sm:p-8"
       >
-        <div className="container">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-24"
+        <div className="section-head">
+          <h2 className="text-3xl font-bold">{t('nav.pricing')}</h2>
+          <p className="muted">
+            {i18n.resolvedLanguage === 'es'
+              ? 'Escala por etapas con planes claros para negocios y resellers.'
+              : i18n.resolvedLanguage === 'pt'
+                ? 'Escalone em etapas com planos claros para negocios e resellers.'
+                : 'Scale in stages with clear plans for businesses and resellers.'}
+          </p>
+        </div>
+        <div className="pricing-tabs">
+          <button
+            className={`pricing-tab ${activePricingTab === 'monthly' ? 'active' : ''}`}
+            onClick={() => setActivePricingTab('monthly')}
           >
-            <h2 className="hero-title mb-8">Simple Pricing</h2>
-            <p className="hero-sub max-w-2xl mx-auto mb-12">
-              Start free. Scale limits. No hidden fees.
-            </p>
-            <div className="pricing-tabs mb-16">
-              <button
-                className={cn(
-                  "pricing-tab px-8 py-3",
-                  activePricingTab === "monthly" && "pricing-tab.active",
-                )}
-                onClick={() => setActivePricingTab("monthly")}
-              >
-                Monthly
-              </button>
-              <button
-                className={cn(
-                  "pricing-tab px-8 py-3",
-                  activePricingTab === "yearly" && "pricing-tab.active",
-                )}
-                onClick={() => setActivePricingTab("yearly")}
-              >
-                Yearly (20% off)
-              </button>
-            </div>
-          </motion.div>
-          <div className="pricing-grid">
-            <PricingCard
-              tier="starter"
-              price={activePricingTab === "monthly" ? "$0/mo" : "$0/yr"}
-              features={pricingFeatures}
-            />
-            <PricingCard
-              tier="pro"
-              price={activePricingTab === "monthly" ? "$29/mo" : "$278/yr"}
-              features={pricingFeatures}
-              popular
-              ctaText="Popular"
-            />
-            <PricingCard
-              tier="business"
-              price={activePricingTab === "monthly" ? "$99/mo" : "$948/yr"}
-              features={pricingFeatures}
-            />
-            <PricingCard
-              tier="enterprise"
-              price="Custom"
-              features={pricingFeatures}
-              ctaText="Contact"
-            />
-          </div>
+            {i18n.resolvedLanguage === 'es'
+              ? 'Mensual'
+              : i18n.resolvedLanguage === 'pt'
+                ? 'Mensal'
+                : 'Monthly'}
+          </button>
+          <button
+            className={`pricing-tab ${activePricingTab === 'yearly' ? 'active' : ''}`}
+            onClick={() => setActivePricingTab('yearly')}
+          >
+            {i18n.resolvedLanguage === 'es'
+              ? 'Anual (20% off)'
+              : i18n.resolvedLanguage === 'pt'
+                ? 'Anual (20% off)'
+                : 'Yearly (20% off)'}
+          </button>
+        </div>
+        <div className="pricing-grid">
+          <PricingCard
+            tier="starter"
+            price={activePricingTab === 'monthly' ? '$0/mo' : '$0/yr'}
+            features={pricingFeatures}
+            ctaText={
+              i18n.resolvedLanguage === 'es'
+                ? 'Empezar'
+                : i18n.resolvedLanguage === 'pt'
+                  ? 'Comecar'
+                  : 'Start'
+            }
+          />
+          <PricingCard
+            tier="pro"
+            price={activePricingTab === 'monthly' ? '$29/mo' : '$278/yr'}
+            features={pricingFeatures}
+            popular
+            ctaText={
+              i18n.resolvedLanguage === 'es'
+                ? 'Mas elegido'
+                : i18n.resolvedLanguage === 'pt'
+                  ? 'Mais escolhido'
+                  : 'Most chosen'
+            }
+          />
+          <PricingCard
+            tier="business"
+            price={activePricingTab === 'monthly' ? '$99/mo' : '$948/yr'}
+            features={pricingFeatures}
+            ctaText={i18n.resolvedLanguage === 'en' ? 'Scale' : 'Escalar'}
+          />
+          <PricingCard
+            tier="enterprise"
+            price="Custom"
+            features={pricingFeatures}
+            ctaText={
+              i18n.resolvedLanguage === 'es'
+                ? 'Contactar'
+                : i18n.resolvedLanguage === 'pt'
+                  ? 'Contato'
+                  : 'Contact'
+            }
+          />
         </div>
       </section>
 
-      {/* Final CTA */}
-      <section className="py-32">
-        <Card className="hero-combo max-w-4xl mx-auto text-center border-0 shadow-2xl">
-          <CardContent className="p-20">
-            <motion.h2
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              className="hero-title mb-8"
-            >
-              Ready Transform Business?
-            </motion.h2>
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              className="hero-sub mb-12 max-w-2xl mx-auto"
-            >
-              Join 5k+ businesses using AppointmentOS schedule smarter grow
-              faster.
-            </motion.p>
-            <div className="flex flex-col lg:flex-row gap-6 justify-center">
-              <Button
-                size="lg"
-                asChild
-                className="px-16 py-8 text-lg font-bold shadow-2xl"
-              >
-                <Link href="/signup">Start Free</Link>
+      <section className="container testimonial-section rounded-3xl p-6 sm:p-8">
+        <div className="section-head">
+          <h2 className="text-3xl font-bold">{t('home.testimonialsTitle')}</h2>
+          <p className="muted">{t('home.testimonialsSubtitle')}</p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {visibleTestimonials.map((item) => (
+            <article key={`${item.name}-${item.role}`} className="testimonial-card">
+              <div className="avatar">
+                <span>{item.name.slice(0, 2).toUpperCase()}</span>
+              </div>
+              <p className="stars">★★★★★</p>
+              <p className="quote">{item.quote}</p>
+              <div className="author">
+                <strong>{item.name}</strong>
+                <span className="muted">{item.role}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section
+        id="faq"
+        className="container rounded-3xl border border-border/60 bg-card/50 p-6 sm:p-8"
+      >
+        <div className="section-head">
+          <h2 className="text-3xl font-bold">{t('home.faqTitle')}</h2>
+          <p className="muted">{t('home.faqSubtitle')}</p>
+        </div>
+        <Accordion type="single" collapsible className="grid gap-3">
+          {faqs.map((faq) => (
+            <AccordionItem key={faq.value} value={faq.value}>
+              <AccordionTrigger>{faq.question}</AccordionTrigger>
+              <AccordionContent>{faq.answer}</AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </section>
+
+      <section className="container py-8">
+        <Card className="hero-combo border-0">
+          <CardContent className="hero-combo-content">
+            <h2 className="hero-title">{t('home.businessTitle')}</h2>
+            <p className="hero-sub">{t('home.businessBody')}</p>
+            <div className="hero-actions">
+              <Button asChild size="lg">
+                <Link href="/signup">{t('home.ctaPrimary')}</Link>
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                asChild
-                className="px-16 py-8 text-lg font-bold"
-              >
-                <Link href="/dashboard">Live Demo</Link>
+              <Button asChild variant="outline" size="lg">
+                <Link href="/login">{t('nav.login')}</Link>
               </Button>
             </div>
           </CardContent>

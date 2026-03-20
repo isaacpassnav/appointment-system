@@ -1,139 +1,74 @@
 'use client';
 
-import Link from 'next/link';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
+import { DashboardStateGuard } from '@/components/dashboard/dashboard-state-guard';
+import { ModuleHeader } from '@/components/dashboard/module-header';
 import { useAuth } from '@/providers/auth-provider';
-import { useTranslation } from 'react-i18next';
 
-function formatDate(value: string | undefined) {
-  if (!value) return '—';
+function formatDate(value?: string) {
+  if (!value) return '-';
   return new Date(value).toLocaleDateString(undefined, {
     year: 'numeric',
-    month: 'long',
+    month: 'short',
     day: '2-digit',
   });
 }
 
-function getInitials(name: string) {
-  return name
-    .split(' ')
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join('')
-    .toUpperCase();
-}
-
-export default function SettingsPage() {
-  const { status, user } = useAuth();
-  const { t } = useTranslation();
-
-  if (status === 'loading') {
-    return (
-      <div className="dash-loading">
-        <p className="muted">{t('dashboard.loading')}</p>
-      </div>
-    );
-  }
-
-  if (status === 'unauthenticated' || !user) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>{t('dashboard.unauthTitle')}</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="muted">{t('dashboard.unauthBody')}</p>
-          <div className="hero-actions">
-            <Button asChild>
-              <Link href="/login">{t('dashboard.unauthPrimary')}</Link>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+export default function DashboardSettingsPage() {
+  const { user } = useAuth();
 
   return (
-    <section className="stack">
-      <header className="dashboard-head reveal">
-        <div>
-          <p className="eyebrow">{t('dashNav.settings')}</p>
-          <h1>{t('settings.title')}</h1>
-        </div>
-      </header>
+    <DashboardStateGuard>
+      <ModuleHeader
+        title="Settings"
+        description="Tenant profile, account details, and operational preferences."
+      />
 
-      <div className="settings-grid">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('settings.profileTitle')}</CardTitle>
-          </CardHeader>
+      <div className="tenant-grid-2">
+        <Card className="tenant-panel">
           <CardContent>
-            <div className="settings-profile-head">
-              <div className="settings-avatar">{getInitials(user.fullName)}</div>
-              <div>
-                <p className="settings-name">{user.fullName}</p>
-                <p className="muted settings-email">{user.email}</p>
-                <Badge
-                  variant="secondary"
-                  className="settings-role-badge"
-                >
-                  {user.role}
-                </Badge>
+            <h2 className="tenant-panel-title">Profile</h2>
+            <div className="tenant-table-shell">
+              <div className="tenant-table-row">
+                <p className="tenant-table-heading">Full name</p>
+                <p className="tenant-table-cell">{user?.fullName ?? '-'}</p>
               </div>
-            </div>
-
-            <div className="settings-divider" />
-
-            <div className="settings-info-row">
-              <div className="settings-field">
-                <span className="settings-field-label">{t('settings.fullName')}</span>
-                <span className="settings-field-value">{user.fullName}</span>
+              <div className="tenant-table-row">
+                <p className="tenant-table-heading">Email</p>
+                <p className="tenant-table-cell">{user?.email ?? '-'}</p>
               </div>
-              <div className="settings-field">
-                <span className="settings-field-label">{t('settings.email')}</span>
-                <span className="settings-field-value">{user.email}</span>
+              <div className="tenant-table-row">
+                <p className="tenant-table-heading">Timezone</p>
+                <p className="tenant-table-cell">{user?.timezone ?? '-'}</p>
               </div>
-              <div className="settings-field">
-                <span className="settings-field-label">{t('settings.timezone')}</span>
-                <span className="settings-field-value">{user.timezone}</span>
+              <div className="tenant-table-row">
+                <p className="tenant-table-heading">Role</p>
+                <p className="tenant-table-cell">{user?.role ?? '-'}</p>
               </div>
-              <div className="settings-field">
-                <span className="settings-field-label">{t('settings.role')}</span>
-                <span className="settings-field-value">{user.role}</span>
-              </div>
-            </div>
-
-            <div className="settings-edit-row">
-              <Button variant="outline" disabled>
-                {t('settings.editButton')}
-              </Button>
-              <p className="muted settings-edit-note">{t('settings.editSoon')}</p>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t('settings.accountTitle')}</CardTitle>
-          </CardHeader>
+        <Card className="tenant-panel">
           <CardContent>
-            <div className="settings-info-row">
-              <div className="settings-field">
-                <span className="settings-field-label">{t('settings.userId')}</span>
-                <span className="settings-field-value settings-field-mono">{user.id}</span>
+            <h2 className="tenant-panel-title">Account</h2>
+            <div className="tenant-table-shell">
+              <div className="tenant-table-row">
+                <p className="tenant-table-heading">User ID</p>
+                <p className="tenant-table-cell">{user?.id ?? '-'}</p>
               </div>
-              {user.createdAt && (
-                <div className="settings-field">
-                  <span className="settings-field-label">{t('settings.memberSince')}</span>
-                  <span className="settings-field-value">{formatDate(user.createdAt)}</span>
-                </div>
-              )}
+              <div className="tenant-table-row">
+                <p className="tenant-table-heading">Member since</p>
+                <p className="tenant-table-cell">{formatDate(user?.createdAt)}</p>
+              </div>
+              <div className="tenant-table-row">
+                <p className="tenant-table-heading">Tenant mode</p>
+                <p className="tenant-table-cell">Prepared for tenantId scoping</p>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
-    </section>
+    </DashboardStateGuard>
   );
 }

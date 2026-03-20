@@ -93,6 +93,26 @@ export async function signUp(
   });
 }
 
+export async function verifyEmailToken(token: string): Promise<{
+  success: boolean;
+  message: string;
+  email: string;
+}> {
+  const query = new URLSearchParams({ token }).toString();
+  return jsonRequest(`/auth/verify?${query}`, {
+    method: 'GET',
+  });
+}
+
+export async function resendVerificationEmail(
+  email: string,
+): Promise<{ success: boolean; message: string }> {
+  return jsonRequest('/auth/resend-verification', {
+    method: 'POST',
+    body: JSON.stringify({ email }),
+  });
+}
+
 export async function refreshToken(refreshTokenValue: string): Promise<AuthTokens> {
   return jsonRequest('/auth/refresh', {
     method: 'POST',

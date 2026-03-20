@@ -11,11 +11,11 @@ export function buildWelcomeTemplate(fullName: string) {
   const safeName = escapeHtml(fullName);
 
   return {
-    subject: 'Welcome to AppointmentIO',
+    subject: 'Welcome to AppointmentOS',
     text: `Hi ${fullName}, your account is ready. We are happy to have you on board.`,
     html: `
       <div style="font-family:Arial,sans-serif;line-height:1.6;color:#111827">
-        <h2>Welcome to AppointmentIO</h2>
+        <h2>Welcome to AppointmentOS</h2>
         <p>Hi ${safeName},</p>
         <p>Your account was created successfully.</p>
         <p>Thanks for joining us.</p>

@@ -46,6 +46,11 @@ Monorepo para un sistema SaaS multi-tenant de gestion de citas con automatizacio
 
 - [x] Landing + autenticacion conectada a API
 - [x] Flujo base de login/registro/verificacion
+- [x] Pagina visual de verificacion de email (`/verify-email`) con CTA a login
+- [x] Landing con FAQ + bloque de dashboard visual animado
+- [x] Seccion dinamica de integraciones (WhatsApp, Telegram, Email, Calendar, Payments)
+- [x] Paginas de marketing para apartados del nav (`/[slug]`) sin rutas rotas
+- [x] Tenant dashboard modular (`/dashboard/*`) con Overview, Appointments, Customers, Services, Automations, Messages, Analytics, Settings
 - [ ] Dashboards completos por rol con datos reales
 - [ ] Flujo completo de reserva, cancelacion y reagendamiento
 
@@ -74,6 +79,7 @@ Monorepo para un sistema SaaS multi-tenant de gestion de citas con automatizacio
 - `REDIS_URL` (recomendado)
 - `UPSTASH_REDIS_REST_URL` (fallback)
 - `UPSTASH_REDIS_REST_TOKEN` (fallback)
+- `FRONTEND_PUBLIC_BASE_URL` (para links de verificacion amigables)
 - `NOTIFICATIONS_INLINE_PROCESSOR_ENABLED` (`true` por defecto)
 - `WORKER_CONCURRENCY` (concurrencia del processor inline)
 
@@ -110,6 +116,7 @@ Configura en Koyeb > Service API > Environment Variables:
 - `RESEND_API_KEY=...`
 - `RESEND_FROM_EMAIL=onboarding@resend.dev` (o dominio verificado)
 - `RESEND_AUDIT_EMAILS=tu-correo@dominio.com` (opcional)
+- `FRONTEND_PUBLIC_BASE_URL=https://tu-frontend.vercel.app`
 - `NOTIFICATIONS_INLINE_PROCESSOR_ENABLED=true`
 - `WORKER_CONCURRENCY=5`
 - `API_PUBLIC_BASE_URL=https://tu-api.koyeb.app`

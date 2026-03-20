@@ -11,6 +11,10 @@ const resources = {
         signup: 'Start free',
         logout: 'Log out',
         menu: 'Menu',
+        products: 'Products',
+        solutions: 'Solutions',
+        pricing: 'Pricing',
+        resources: 'Resources',
       },
       footer: {
         tagline: 'Multi-tenant appointment SaaS built for scale, plans, and automation.',
@@ -257,6 +261,10 @@ const resources = {
         signup: 'Comenzar',
         logout: 'Salir',
         menu: 'Menu',
+        products: 'Productos',
+        solutions: 'Soluciones',
+        pricing: 'Precios',
+        resources: 'Recursos',
       },
       footer: {
         tagline: 'SaaS de citas multi-tenant para escalar con planes y automatizacion.',
@@ -501,6 +509,10 @@ const resources = {
         signup: 'Comecar',
         logout: 'Sair',
         menu: 'Menu',
+        products: 'Produtos',
+        solutions: 'Solucoes',
+        pricing: 'Precos',
+        resources: 'Recursos',
       },
       footer: {
         tagline: 'SaaS de agendamentos multi-tenant para escalar com planos e automacao.',

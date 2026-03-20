@@ -434,6 +434,14 @@ export class AuthService {
       return template.replace('{token}', token);
     }
 
+    const frontendBase = this.configService.get<string>(
+      'FRONTEND_PUBLIC_BASE_URL',
+    );
+    if (frontendBase) {
+      const normalizedFrontendBase = frontendBase.replace(/\/$/, '');
+      return `${normalizedFrontendBase}/verify-email?token=${encodeURIComponent(token)}`;
+    }
+
     const apiBase =
       this.configService.get<string>('API_PUBLIC_BASE_URL') ??
       'http://localhost:3000';

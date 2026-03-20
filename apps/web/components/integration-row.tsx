@@ -1,44 +1,97 @@
-import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
-import { FaGoogle, FaWhatsapp } from "react-icons/fa6";
-import { SiStripe, SiZoom, SiHubspot, SiMailchimp } from "react-icons/si";
+'use client';
+
+import { motion } from 'framer-motion';
+import Image from 'next/image';
+import { Badge } from '@/components/ui/badge';
 
 const integrations = [
-  { icon: FaGoogle, name: "Google Calendar", href: "#" },
-  { icon: SiStripe, name: "Stripe", href: "#" },
-  { icon: SiZoom, name: "Zoom", href: "#" },
-  { icon: FaWhatsapp, name: "WhatsApp", href: "#" },
-  { icon: SiHubspot, name: "HubSpot CRM", href: "#" },
-  { icon: SiMailchimp, name: "Mailchimp", href: "#" },
+  {
+    name: 'WhatsApp Business',
+    channel: 'Messaging',
+    logo: '/integrations/whatsapp.svg',
+  },
+  {
+    name: 'Telegram Bot',
+    channel: 'Messaging',
+    logo: '/integrations/telegram.svg',
+  },
+  {
+    name: 'Email (Resend)',
+    channel: 'Email',
+    logo: '/integrations/email.svg',
+  },
+  {
+    name: 'Google Calendar',
+    channel: 'Calendar',
+    logo: '/integrations/calendar.svg',
+  },
+  {
+    name: 'Stripe',
+    channel: 'Payments',
+    logo: '/integrations/stripe.svg',
+  },
+  {
+    name: 'Zoom',
+    channel: 'Meetings',
+    logo: '/integrations/zoom.svg',
+  },
+  {
+    name: 'Slack',
+    channel: 'Alerts',
+    logo: '/integrations/slack.svg',
+  },
+  {
+    name: 'HubSpot',
+    channel: 'CRM',
+    logo: '/integrations/hubspot.svg',
+  },
 ];
 
-interface IntegrationRowProps {
-  className?: string;
-}
+export function IntegrationRow() {
+  const track = [...integrations, ...integrations];
 
-export function IntegrationRow({ className }: IntegrationRowProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      transition={{ duration: 0.8 }}
-      className={cn(
-        "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 place-items-center py-16",
-        className,
-      )}
-    >
-      {integrations.map(({ icon: Icon, name }, idx) => (
+    <div className="overflow-hidden">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="overflow-hidden rounded-2xl"
+      >
         <motion.div
-          key={name}
-          initial={{ scale: 0.8, opacity: 0 }}
-          whileInView={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.4, delay: idx * 0.1 }}
-          whileHover={{ scale: 1.1, rotate: 5 }}
-          className="flex size-16 items-center justify-center rounded-xl bg-muted p-4 shadow-lg transition-all duration-300 hover:bg-primary/10 hover:shadow-primary/20"
+          className="flex w-max gap-4"
+          animate={{ x: ['0%', '-50%'] }}
+          transition={{
+            duration: 26,
+            repeat: Infinity,
+            ease: 'linear',
+          }}
         >
-          <Icon className="h-8 w-8 text-foreground" />
+          {track.map((integration, index) => (
+            <article
+              key={`${integration.name}-${index}`}
+              className="flex min-h-[90px] w-[230px] items-center gap-3 rounded-2xl border border-primary/25 bg-gradient-to-br from-[#15132c] to-[#2b1f52b8] p-3 shadow-xl shadow-black/30"
+            >
+              <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-xl bg-white/5">
+                <Image
+                  src={integration.logo}
+                  alt={`${integration.name} logo`}
+                  className="h-7 w-7"
+                  width={28}
+                  height={28}
+                  loading="lazy"
+                />
+              </div>
+              <div className="grid gap-1">
+                <p className="m-0 font-bold leading-tight">{integration.name}</p>
+                <Badge variant="secondary" className="w-fit">
+                  {integration.channel}
+                </Badge>
+              </div>
+            </article>
+          ))}
         </motion.div>
-      ))}
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }

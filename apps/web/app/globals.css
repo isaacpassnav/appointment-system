@@ -727,6 +727,92 @@ img {
   font-size: 0.85rem;
 }
 
+.chart-wave {
+  position: absolute;
+  inset: auto -22% 28px;
+  height: 62px;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(122, 74, 255, 0),
+    rgba(122, 74, 255, 0.48),
+    rgba(189, 109, 255, 0.16),
+    rgba(122, 74, 255, 0)
+  );
+  filter: blur(8px);
+  z-index: 0;
+  animation: chartWave 4.2s ease-in-out infinite;
+}
+
+.chart-wave-b {
+  bottom: 76px;
+  animation-delay: -2s;
+  opacity: 0.8;
+}
+
+.integrations-dynamic {
+  overflow: hidden;
+}
+
+.integration-marquee {
+  overflow: hidden;
+  border-radius: var(--radius-md);
+}
+
+.integration-track {
+  display: flex;
+  gap: 14px;
+  width: max-content;
+  animation: integrationsScroll 24s linear infinite;
+}
+
+.integration-card {
+  width: 230px;
+  min-height: 90px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(148, 118, 255, 0.24);
+  background: linear-gradient(
+    145deg,
+    rgba(20, 18, 42, 0.92),
+    rgba(43, 31, 82, 0.72)
+  );
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  box-shadow: var(--shadow-soft);
+}
+
+.integration-logo-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.06);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.integration-logo {
+  width: 28px;
+  height: 28px;
+}
+
+.integration-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.integration-name {
+  font-weight: 700;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.integration-badge {
+  width: fit-content;
+}
+
 .section-head {
   display: grid;
   gap: 8px;
@@ -908,6 +994,14 @@ img {
   color: #fb7185;
 }
 
+.feedback.success {
+  color: #4ade80;
+}
+
+.feedback.info {
+  color: #93c5fd;
+}
+
 .dashboard-head {
   display: flex;
   flex-wrap: wrap;
@@ -1051,6 +1145,30 @@ img {
   color: hsl(var(--muted-foreground));
 }
 
+.whatsapp-float {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: #25d366;
+  color: #ffffff;
+  display: grid;
+  place-items: center;
+  font-size: 1.5rem;
+  box-shadow: 0 16px 35px rgba(37, 211, 102, 0.5);
+  z-index: 40;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.whatsapp-float:hover {
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 20px 38px rgba(37, 211, 102, 0.58);
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -1123,22 +1241,33 @@ img {
 
 @keyframes chartWave {
   0% {
-    transform: translateX(-100%) translateY(0);
+    transform: translateX(-30%) translateY(0);
   }
   50% {
-    transform: translateX(0) translateY(-5px);
+    transform: translateX(10%) translateY(-7px);
   }
   100% {
-    transform: translateX(100%) translateY(0);
+    transform: translateX(40%) translateY(0);
+  }
+}
+
+@keyframes integrationsScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .reveal,
   .ticker-track,
+  .integration-track,
   .demo-frame,
   .business-chart::before,
-  .business-chart::after {
+  .business-chart::after,
+  .chart-wave {
     animation: none !important;
   }
 }

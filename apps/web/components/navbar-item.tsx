@@ -42,7 +42,16 @@ interface NavbarItemProps {
 
 const smoothScroll = (target: string) => {
   const element = document.querySelector(target);
-  if (element) element.scrollIntoView({ behavior: "smooth" });
+  if (!element) return false;
+  element.scrollIntoView({ behavior: "smooth" });
+  return true;
+};
+
+const extractHashTarget = (href?: string) => {
+  if (!href) return null;
+  if (href.startsWith("#")) return href;
+  if (href.startsWith("/#")) return href.slice(1);
+  return null;
 };
 
 export function NavbarItem({ item, className }: NavbarItemProps) {
@@ -59,9 +68,9 @@ export function NavbarItem({ item, className }: NavbarItemProps) {
           className,
         )}
         onClick={(e) => {
-          if (simpleItem.href?.startsWith("#")) {
+          const hashTarget = extractHashTarget(simpleItem.href);
+          if (hashTarget && smoothScroll(hashTarget)) {
             e.preventDefault();
-            smoothScroll(simpleItem.href);
           }
         }}
       >
@@ -101,9 +110,9 @@ export function NavbarItem({ item, className }: NavbarItemProps) {
                 href={subItem.href || "#"}
                 className="flex items-center gap-3 p-2 rounded-md hover:bg-accent cursor-default w-full no-underline"
                 onClick={(e) => {
-                  if (subItem.href?.startsWith("#")) {
+                  const hashTarget = extractHashTarget(subItem.href);
+                  if (hashTarget && smoothScroll(hashTarget)) {
                     e.preventDefault();
-                    smoothScroll(subItem.href);
                   }
                 }}
               >

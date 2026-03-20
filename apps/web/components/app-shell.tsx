@@ -7,6 +7,7 @@ import {
   FaGithub,
   FaInstagram,
   FaLinkedinIn,
+  FaWhatsapp,
   FaXTwitter,
 } from "react-icons/fa6";
 import { Badge } from "@/components/ui/badge";
@@ -105,27 +106,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     { href: "/about", label: "About Us", icon: Users },
     { href: "/help", label: "Help Center", icon: HelpCircle },
     { href: "/contact", label: "Contact Us", icon: Mail },
-    { href: "/api", label: "API & Dev Tools", icon: Code2 },
+    { href: "/appointment-system", label: "API & Dev Tools", icon: Code2 },
   ];
 
   const navLinks: NavbarItemType[] = [
     { href: "/", label: t("nav.home") || "Home" },
     {
-      label: "Products",
+      label: t("nav.products") || "Products",
       icon: Package,
       items: productsItems,
     },
 
     {
-      label: "Solutions",
+      label: t("nav.solutions") || "Solutions",
       icon: Layers,
       sections: solutionsSections,
       solutionsLayout: true,
     },
 
-    { href: "#pricing", label: "Pricing" },
+    { href: "/#pricing", label: t("nav.pricing") || "Pricing" },
     {
-      label: "Resources",
+      label: t("nav.resources") || "Resources",
       icon: BookOpen,
       items: resourcesItems,
     },
@@ -227,9 +228,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
           <div className="footer-col">
             <p className="footer-title">{t("footer.product")}</p>
-            <a href="/dashboard">{t("footer.dashboard")}</a>
-            <a href="/login">{t("footer.login")}</a>
-            <a href="/signup">{t("footer.signup")}</a>
+            <Link href="/dashboard">{t("footer.dashboard")}</Link>
+            <Link href="/login">{t("footer.login")}</Link>
+            <Link href="/signup">{t("footer.signup")}</Link>
           </div>
 
           <div className="footer-col">
@@ -278,6 +279,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <p>{t("footer.copyright")}</p>
         </div>
       </footer>
+
+      <a
+        href="https://wa.me/51967906070"
+        target="_blank"
+        rel="noreferrer"
+        className="fixed bottom-[18px] right-[18px] z-40 grid h-14 w-14 place-items-center rounded-full bg-[#25d366] text-2xl text-white shadow-[0_16px_35px_rgba(37,211,102,0.5)] transition hover:translate-y-[-2px] hover:scale-[1.03] hover:shadow-[0_20px_38px_rgba(37,211,102,0.58)]"
+        aria-label="WhatsApp contact"
+      >
+        <FaWhatsapp aria-hidden={true} />
+      </a>
     </div>
   );
 }
