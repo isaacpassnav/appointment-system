@@ -4,6 +4,8 @@ import { Job } from 'bullmq';
 import { MailService } from '../mail/mail.service';
 import type { NotificationJobData } from './notification-job.types';
 import {
+  NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL,
+  NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL,
   NOTIFICATION_JOB_VERIFY_EMAIL,
   NOTIFICATION_JOB_WELCOME_EMAIL,
   NOTIFICATIONS_QUEUE_NAME,
@@ -31,6 +33,25 @@ export class NotificationsProcessor extends WorkerHost {
         data.to,
         data.fullName,
         data.verifyUrl,
+      );
+      return;
+    }
+
+    if (data.type === NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL) {
+      await this.mailService.sendAppointmentConfirmationEmail(
+        data.to,
+        data.fullName,
+        data.startsAtIso,
+      );
+      return;
+    }
+
+    if (data.type === NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL) {
+      await this.mailService.sendAppointmentReminderEmail(
+        data.to,
+        data.fullName,
+        data.startsAtIso,
+        data.reminderOffsetHours,
       );
       return;
     }

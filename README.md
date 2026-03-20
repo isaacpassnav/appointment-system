@@ -39,7 +39,7 @@ Monorepo para un sistema SaaS multi-tenant de gestion de citas con automatizacio
 - [x] Integracion Redis con Upstash (`rediss://`)
 - [x] Fallback por variables `UPSTASH_REDIS_REST_*` si falta `REDIS_URL`
 - [x] Modo free: processor inline en API (sin servicio worker dedicado)
-- [ ] Recordatorios 24h y 1h antes
+- [x] Recordatorios 24h y 1h antes (jobs delayed al crear cita)
 - [ ] Dead-letter queue con politica de reintentos avanzada
 
 ### Fase 3 - Frontend MVP
@@ -62,6 +62,9 @@ Monorepo para un sistema SaaS multi-tenant de gestion de citas con automatizacio
 - Pipeline de deploy condicionado por cambios (`api/worker` vs `web`).
 - Opcion de auditoria de correos agregada:
   - Variable `RESEND_AUDIT_EMAILS` para recibir copia BCC de correos salientes.
+- Proveedor de correo endurecido:
+  - SMTP (Brevo) como primario con fallback a Resend.
+  - Si falla encolar job, API hace fallback directo de envio para no perder correos transaccionales.
 
 ## Variables de entorno clave
 

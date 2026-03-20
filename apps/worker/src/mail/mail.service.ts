@@ -1,7 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import nodemailer, { type Transporter } from 'nodemailer';
-import { buildVerifyEmailTemplate, buildWelcomeTemplate } from './templates';
+import {
+  buildAppointmentConfirmationTemplate,
+  buildAppointmentReminderTemplate,
+  buildVerifyEmailTemplate,
+  buildWelcomeTemplate,
+} from './templates';
 
 type MailPayload = {
   to: string;
@@ -36,6 +41,42 @@ export class MailService {
 
   async sendVerifyEmail(to: string, fullName: string, verifyUrl: string) {
     const template = buildVerifyEmailTemplate(fullName, verifyUrl);
+    await this.send({
+      to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+  }
+
+  async sendAppointmentConfirmationEmail(
+    to: string,
+    fullName: string,
+    startsAtIso: string,
+  ) {
+    const template = buildAppointmentConfirmationTemplate(
+      fullName,
+      startsAtIso,
+    );
+    await this.send({
+      to,
+      subject: template.subject,
+      html: template.html,
+      text: template.text,
+    });
+  }
+
+  async sendAppointmentReminderEmail(
+    to: string,
+    fullName: string,
+    startsAtIso: string,
+    reminderOffsetHours: 24 | 1,
+  ) {
+    const template = buildAppointmentReminderTemplate(
+      fullName,
+      startsAtIso,
+      reminderOffsetHours,
+    );
     await this.send({
       to,
       subject: template.subject,

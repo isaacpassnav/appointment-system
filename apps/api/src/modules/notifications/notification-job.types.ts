@@ -1,4 +1,6 @@
 import {
+  NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL,
+  NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL,
   NOTIFICATION_JOB_VERIFY_EMAIL,
   NOTIFICATION_JOB_WELCOME_EMAIL,
 } from './notifications.constants';
@@ -16,4 +18,23 @@ export type VerifyEmailJobData = {
   verifyUrl: string;
 };
 
-export type NotificationJobData = WelcomeEmailJobData | VerifyEmailJobData;
+export type AppointmentConfirmationEmailJobData = {
+  type: typeof NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL;
+  to: string;
+  fullName: string;
+  startsAtIso: string;
+};
+
+export type AppointmentReminderEmailJobData = {
+  type: typeof NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL;
+  to: string;
+  fullName: string;
+  startsAtIso: string;
+  reminderOffsetHours: 24 | 1;
+};
+
+export type NotificationJobData =
+  | WelcomeEmailJobData
+  | VerifyEmailJobData
+  | AppointmentConfirmationEmailJobData
+  | AppointmentReminderEmailJobData;

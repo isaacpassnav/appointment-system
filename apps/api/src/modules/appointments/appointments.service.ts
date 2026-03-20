@@ -2,18 +2,23 @@ import {
   BadRequestException,
   ConflictException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { AppointmentStatus } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { IdempotencyCacheService } from './idempotency-cache.service';
 
 @Injectable()
 export class AppointmentsService {
+  private readonly logger = new Logger(AppointmentsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly idempotencyCache: IdempotencyCacheService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   async create(
@@ -24,7 +29,11 @@ export class AppointmentsService {
   ) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
-      select: { id: true },
+      select: {
+        id: true,
+        email: true,
+        fullName: true,
+      },
     });
 
     if (!user) {
@@ -80,6 +89,12 @@ export class AppointmentsService {
     if (cacheKey) {
       this.idempotencyCache.save(cacheKey, appointment.id);
     }
+
+    this.scheduleAppointmentNotifications({
+      email: user.email,
+      fullName: user.fullName,
+      startsAtIso: startsAt.toISOString(),
+    });
 
     return appointment;
   }
@@ -143,5 +158,66 @@ export class AppointmentsService {
     idempotencyKey: string,
   ): string {
     return `${tenantId}:${userId}:${idempotencyKey}`;
+  }
+
+  private scheduleAppointmentNotifications(params: {
+    email: string;
+    fullName: string;
+    startsAtIso: string;
+  }) {
+    const startsAtMs = new Date(params.startsAtIso).getTime();
+    if (Number.isNaN(startsAtMs)) {
+      return;
+    }
+
+    const now = Date.now();
+    const reminder24DelayMs = startsAtMs - now - 24 * 60 * 60 * 1000;
+    const reminder1DelayMs = startsAtMs - now - 60 * 60 * 1000;
+
+    const tasks: Promise<void>[] = [
+      this.notificationsService.enqueueAppointmentConfirmationEmail({
+        to: params.email,
+        fullName: params.fullName,
+        startsAtIso: params.startsAtIso,
+      }),
+    ];
+
+    if (reminder24DelayMs > 0) {
+      tasks.push(
+        this.notificationsService.enqueueAppointmentReminderEmail({
+          to: params.email,
+          fullName: params.fullName,
+          startsAtIso: params.startsAtIso,
+          reminderOffsetHours: 24,
+          delayMs: reminder24DelayMs,
+        }),
+      );
+    }
+
+    if (reminder1DelayMs > 0) {
+      tasks.push(
+        this.notificationsService.enqueueAppointmentReminderEmail({
+          to: params.email,
+          fullName: params.fullName,
+          startsAtIso: params.startsAtIso,
+          reminderOffsetHours: 1,
+          delayMs: reminder1DelayMs,
+        }),
+      );
+    }
+
+    void Promise.allSettled(tasks).then((results) => {
+      for (const result of results) {
+        if (result.status === 'rejected') {
+          const message =
+            result.reason instanceof Error
+              ? result.reason.message
+              : String(result.reason);
+          this.logger.error(
+            `Failed to enqueue appointment email job: ${message}`,
+          );
+        }
+      }
+    });
   }
 }

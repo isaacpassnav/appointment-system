@@ -46,8 +46,8 @@
 - [x] Request correlation ID (`x-request-id`)
 - [x] Rate limiting by route category (auth/public/private)
 - [x] Idempotency for appointment creation (client request key)
-- [ ] Worker job processors (confirmation + reminders)
-- [ ] Email provider integration (send + retry + dead-letter strategy)
+- [x] Worker job processors (confirmation + reminders)
+- [x] Email provider integration (Brevo SMTP principal + fallback a Resend + fallback directo si falla queue)
 - [ ] WhatsApp provider integration (optional for MVP scope)
 - [ ] Contract tests/e2e for users and appointments routes
 
@@ -79,3 +79,7 @@ npm run db:seed
 ## Notes
 - Current idempotency implementation uses in-memory cache keyed by `tenantId` + `userId` + `x-idempotency-key`.
 - For horizontal scaling, migrate idempotency storage to Redis/PostgreSQL unique key strategy.
+- Appointment creation now enqueues:
+  - confirmation email (immediate)
+  - reminder 24h before (delayed job)
+  - reminder 1h before (delayed job)

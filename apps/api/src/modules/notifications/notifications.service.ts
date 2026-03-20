@@ -4,10 +4,16 @@ import { Queue } from 'bullmq';
 import { MailService } from '../mail/mail.service';
 import type { NotificationJobData } from './notification-job.types';
 import {
+  NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL,
+  NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL,
   NOTIFICATION_JOB_VERIFY_EMAIL,
   NOTIFICATION_JOB_WELCOME_EMAIL,
   NOTIFICATIONS_QUEUE_NAME,
 } from './notifications.constants';
+
+type EnqueueOptions = {
+  delayMs?: number;
+};
 
 @Injectable()
 export class NotificationsService implements OnModuleDestroy {
@@ -64,14 +70,53 @@ export class NotificationsService implements OnModuleDestroy {
     });
   }
 
+  async enqueueAppointmentConfirmationEmail(params: {
+    to: string;
+    fullName: string;
+    startsAtIso: string;
+  }) {
+    await this.enqueueOrFallback({
+      type: NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL,
+      to: params.to,
+      fullName: params.fullName,
+      startsAtIso: params.startsAtIso,
+    });
+  }
+
+  async enqueueAppointmentReminderEmail(params: {
+    to: string;
+    fullName: string;
+    startsAtIso: string;
+    reminderOffsetHours: 24 | 1;
+    delayMs: number;
+  }) {
+    await this.enqueueOrFallback(
+      {
+        type: NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL,
+        to: params.to,
+        fullName: params.fullName,
+        startsAtIso: params.startsAtIso,
+        reminderOffsetHours: params.reminderOffsetHours,
+      },
+      {
+        delayMs: params.delayMs,
+      },
+    );
+  }
+
   async onModuleDestroy() {
     await Promise.allSettled([this.queue?.close()]);
   }
 
-  private async enqueueOrFallback(jobData: NotificationJobData) {
+  private async enqueueOrFallback(
+    jobData: NotificationJobData,
+    options?: EnqueueOptions,
+  ) {
     if (this.queue) {
       try {
-        await this.queue.add(jobData.type, jobData);
+        await this.queue.add(jobData.type, jobData, {
+          delay: options?.delayMs,
+        });
         return;
       } catch (error: unknown) {
         const message = error instanceof Error ? error.message : String(error);
@@ -79,6 +124,13 @@ export class NotificationsService implements OnModuleDestroy {
           `Queue enqueue failed for ${jobData.type}. Falling back to direct email send. Reason: ${message}`,
         );
       }
+    }
+
+    if ((options?.delayMs ?? 0) > 0) {
+      this.logger.warn(
+        `Skipping delayed notification without queue support: ${jobData.type}.`,
+      );
+      return;
     }
 
     // Fallback keeps delivery working even when Redis is missing or temporarily unreachable.
@@ -96,6 +148,25 @@ export class NotificationsService implements OnModuleDestroy {
         jobData.to,
         jobData.fullName,
         jobData.verifyUrl,
+      );
+      return;
+    }
+
+    if (jobData.type === NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL) {
+      await this.mailService.sendAppointmentConfirmationEmail(
+        jobData.to,
+        jobData.fullName,
+        jobData.startsAtIso,
+      );
+      return;
+    }
+
+    if (jobData.type === NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL) {
+      await this.mailService.sendAppointmentReminderEmail(
+        jobData.to,
+        jobData.fullName,
+        jobData.startsAtIso,
+        jobData.reminderOffsetHours,
       );
     }
   }

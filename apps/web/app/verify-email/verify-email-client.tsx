@@ -22,6 +22,7 @@ export function VerifyEmailClient() {
   const [state, setState] = useState<VerifyState>('loading');
   const [message, setMessage] = useState('Verifying your email...');
   const [verifiedEmail, setVerifiedEmail] = useState('');
+  const [verifiedAt, setVerifiedAt] = useState('');
   const [resendEmail, setResendEmail] = useState('');
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState('');
@@ -43,6 +44,15 @@ export function VerifyEmailClient() {
         setState('success');
         setMessage(result.message || 'Email verified successfully.');
         setVerifiedEmail(result.email ?? '');
+        setVerifiedAt(
+          new Date().toLocaleString(undefined, {
+            year: 'numeric',
+            month: 'short',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit',
+          }),
+        );
         if (result.email) {
           setResendEmail(result.email);
         }
@@ -108,6 +118,21 @@ export function VerifyEmailClient() {
 
           {verifiedEmail ? (
             <p className="muted">Verified account: {verifiedEmail}</p>
+          ) : null}
+
+          {state === 'success' ? (
+            <div className="rounded-xl border border-primary/25 bg-primary/10 p-4 text-sm">
+              <p className="font-semibold">Verification details</p>
+              <p className="mt-1 text-muted-foreground">
+                Status: Verified successfully
+              </p>
+              {verifiedEmail ? (
+                <p className="text-muted-foreground">Email: {verifiedEmail}</p>
+              ) : null}
+              {verifiedAt ? (
+                <p className="text-muted-foreground">Verified at: {verifiedAt}</p>
+              ) : null}
+            </div>
           ) : null}
 
           <div className="flex flex-col gap-3 sm:flex-row">

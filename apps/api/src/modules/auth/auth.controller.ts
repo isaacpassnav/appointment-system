@@ -1,7 +1,17 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Query,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   ApiBearerAuth,
   ApiBody,
+  ApiExcludeEndpoint,
   ApiOkResponse,
   ApiOperation,
   ApiQuery,
@@ -18,10 +28,18 @@ import { AccessTokenGuard } from './guards/access-token.guard';
 import type { JwtPayload } from './interfaces/jwt-payload.interface';
 import { AuthService } from './auth.service';
 
+type VerifyEmailReply = {
+  redirect(statusCode: number, url: string): Promise<void> | void;
+  send(payload: unknown): Promise<void> | void;
+};
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @ApiOperation({ summary: 'Create a new user account' })
   @ApiBody({ type: SignUpDto })
@@ -59,8 +77,19 @@ export class AuthController {
   @ApiQuery({ name: 'token', required: true })
   @Throttle({ auth: { limit: 20, ttl: 60_000 } })
   @Get('verify-email')
-  verifyEmailAlias(@Query() query: VerifyEmailDto) {
-    return this.authService.verifyEmail(query.token);
+  @ApiExcludeEndpoint()
+  async verifyEmailAlias(
+    @Query() query: VerifyEmailDto,
+    @Res() reply: VerifyEmailReply,
+  ): Promise<void> {
+    const redirectTarget = this.buildVerifyRedirectUrl(query.token);
+    if (redirectTarget) {
+      await reply.redirect(302, redirectTarget);
+      return;
+    }
+
+    const result = await this.authService.verifyEmail(query.token);
+    await reply.send(result);
   }
 
   @ApiOperation({ summary: 'Resend verification email' })
@@ -88,5 +117,18 @@ export class AuthController {
   @Post('logout')
   logout(@CurrentUser() user: JwtPayload) {
     return this.authService.logout(user.sub);
+  }
+
+  private buildVerifyRedirectUrl(token: string) {
+    const frontendBase = this.configService.get<string>(
+      'FRONTEND_PUBLIC_BASE_URL',
+    );
+
+    if (!frontendBase) {
+      return null;
+    }
+
+    const normalizedFrontendBase = frontendBase.replace(/\/$/, '');
+    return `${normalizedFrontendBase}/verify-email?token=${encodeURIComponent(token)}`;
   }
 }
