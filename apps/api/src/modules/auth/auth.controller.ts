@@ -55,6 +55,14 @@ export class AuthController {
     return this.authService.verifyEmail(query.token);
   }
 
+  @ApiOperation({ summary: 'Verify email account with token (alias)' })
+  @ApiQuery({ name: 'token', required: true })
+  @Throttle({ auth: { limit: 20, ttl: 60_000 } })
+  @Get('verify-email')
+  verifyEmailAlias(@Query() query: VerifyEmailDto) {
+    return this.authService.verifyEmail(query.token);
+  }
+
   @ApiOperation({ summary: 'Resend verification email' })
   @ApiBody({ type: ResendVerificationDto })
   @Throttle({ auth: { limit: 6, ttl: 60_000 } })

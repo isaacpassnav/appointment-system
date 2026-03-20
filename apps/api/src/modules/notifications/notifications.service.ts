@@ -70,11 +70,18 @@ export class NotificationsService implements OnModuleDestroy {
 
   private async enqueueOrFallback(jobData: NotificationJobData) {
     if (this.queue) {
-      await this.queue.add(jobData.type, jobData);
-      return;
+      try {
+        await this.queue.add(jobData.type, jobData);
+        return;
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.warn(
+          `Queue enqueue failed for ${jobData.type}. Falling back to direct email send. Reason: ${message}`,
+        );
+      }
     }
 
-    // Fallback to keep local/dev environments usable without Redis.
+    // Fallback keeps delivery working even when Redis is missing or temporarily unreachable.
     await this.sendEmailDirectly(jobData);
   }
 

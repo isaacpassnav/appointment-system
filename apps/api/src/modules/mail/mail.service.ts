@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import nodemailer, { type Transporter } from 'nodemailer';
 import { buildVerifyEmailTemplate, buildWelcomeTemplate } from './templates';
 
 type MailPayload = {
@@ -19,6 +20,7 @@ function parseAuditRecipients(rawValue?: string) {
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
+  private transporter: Transporter | null = null;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -43,18 +45,96 @@ export class MailService {
   }
 
   private async send(payload: MailPayload) {
-    const apiKey = this.configService.get<string>('RESEND_API_KEY');
-    const from =
-      this.configService.get<string>('RESEND_FROM_EMAIL') ??
-      'onboarding@resend.dev';
     const auditRecipients = parseAuditRecipients(
       this.configService.get<string>('RESEND_AUDIT_EMAILS') ??
         this.configService.get<string>('RESEND_AUDIT_EMAIL'),
     ).filter((email) => email !== payload.to.toLowerCase());
 
+    if (this.isSmtpConfigured()) {
+      try {
+        await this.sendViaSmtp(payload, auditRecipients);
+        return;
+      } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : String(error);
+        this.logger.error(
+          `SMTP send failed for ${payload.to}. Falling back to Resend if available. Reason: ${message}`,
+        );
+      }
+    }
+
+    await this.sendViaResend(payload, auditRecipients);
+  }
+
+  private isSmtpConfigured() {
+    return Boolean(
+      this.configService.get<string>('SMTP_HOST') &&
+      this.configService.get<string>('SMTP_USER') &&
+      this.configService.get<string>('SMTP_PASS'),
+    );
+  }
+
+  private getTransporter() {
+    if (this.transporter) {
+      return this.transporter;
+    }
+
+    const host = this.configService.get<string>('SMTP_HOST');
+    const user = this.configService.get<string>('SMTP_USER');
+    const pass = this.configService.get<string>('SMTP_PASS');
+    const portRaw = this.configService.get<string>('SMTP_PORT') ?? '587';
+    const port = Number(portRaw);
+    const secure = port === 465;
+
+    if (!host || !user || !pass || !Number.isFinite(port)) {
+      throw new Error(
+        'SMTP configuration is incomplete. Required: SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS.',
+      );
+    }
+
+    this.transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure,
+      requireTLS: !secure,
+      auth: {
+        user,
+        pass,
+      },
+      tls: {
+        minVersion: 'TLSv1.2',
+      },
+    });
+
+    return this.transporter;
+  }
+
+  private async sendViaSmtp(payload: MailPayload, auditRecipients: string[]) {
+    const transporter = this.getTransporter();
+    const from =
+      this.configService.get<string>('SMTP_FROM') ??
+      this.configService.get<string>('RESEND_FROM_EMAIL') ??
+      'onboarding@resend.dev';
+
+    await transporter.sendMail({
+      from,
+      to: payload.to,
+      bcc: auditRecipients.length > 0 ? auditRecipients : undefined,
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text,
+    });
+  }
+
+  private async sendViaResend(payload: MailPayload, auditRecipients: string[]) {
+    const apiKey = this.configService.get<string>('RESEND_API_KEY');
+    const from =
+      this.configService.get<string>('RESEND_FROM_EMAIL') ??
+      this.configService.get<string>('SMTP_FROM') ??
+      'onboarding@resend.dev';
+
     if (!apiKey) {
       this.logger.warn(
-        `RESEND_API_KEY is not configured. Email to ${payload.to} was skipped.`,
+        `SMTP and Resend are not fully configured. Email to ${payload.to} was skipped.`,
       );
       return;
     }

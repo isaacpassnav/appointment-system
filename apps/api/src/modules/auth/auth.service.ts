@@ -417,7 +417,9 @@ export class AuthService {
   private async issueEmailVerificationToken(userId: string) {
     const verificationToken = this.createVerificationToken();
     const verificationTokenHash = this.hashVerificationToken(verificationToken);
-    const verificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const verificationExpiresAt = new Date(
+      Date.now() + this.resolveVerificationTokenTtlMs(),
+    );
     await this.usersService.setEmailVerificationToken(
       userId,
       verificationTokenHash,
@@ -446,7 +448,7 @@ export class AuthService {
       this.configService.get<string>('API_PUBLIC_BASE_URL') ??
       'http://localhost:3000';
     const normalizedApiBase = apiBase.replace(/\/$/, '');
-    return `${normalizedApiBase}/api/auth/verify?token=${token}`;
+    return `${normalizedApiBase}/api/auth/verify-email?token=${encodeURIComponent(token)}`;
   }
 
   private scheduleSignupEmails(params: {
@@ -475,5 +477,25 @@ export class AuthService {
         }
       }
     });
+  }
+
+  private resolveVerificationTokenTtlMs() {
+    const raw = this.configService
+      .get<string>('VERIFY_EMAIL_TOKEN_TTL_MINUTES')
+      ?.trim();
+
+    if (!raw) {
+      return 60 * 60 * 1000;
+    }
+
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      this.logger.warn(
+        'Invalid VERIFY_EMAIL_TOKEN_TTL_MINUTES value. Falling back to 60 minutes.',
+      );
+      return 60 * 60 * 1000;
+    }
+
+    return Math.floor(parsed * 60 * 1000);
   }
 }

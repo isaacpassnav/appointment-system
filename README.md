@@ -154,6 +154,9 @@ Nota: `API_PROXY_TARGET` debe incluir `/api` al final.
   - Reenviar verificacion: `POST /api/auth/resend-verification` con `{ "email": "..." }`.
 - Warning en worker: `RESEND_API_KEY is not configured`:
   - Falta `RESEND_API_KEY` en el servicio Worker (Koyeb o `.env` local).
+- No llegan correos de verificacion a usuarios finales:
+  - Si usas `RESEND_FROM_EMAIL=onboarding@resend.dev`, Resend aplica restricciones de envio en modo prueba.
+  - Para produccion real, verifica un dominio propio en Resend y usa un remitente de ese dominio.
 - Si no puedes crear worker dedicado en Koyeb free:
   - Activa `NOTIFICATIONS_INLINE_PROCESSOR_ENABLED=true` en API y despliega solo API.
 
