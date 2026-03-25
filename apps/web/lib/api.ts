@@ -162,3 +162,38 @@ export async function cancelAppointment(
     accessToken,
   );
 }
+
+export type ProfileUpdatePayload = {
+  fullName?: string;
+  phone?: string;
+  timezone?: string;
+};
+
+export type PasswordUpdatePayload = {
+  currentPassword: string;
+  newPassword: string;
+};
+
+export async function getProfile(accessToken: string): Promise<AuthUser> {
+  return jsonRequest('/users/me/profile', { method: 'GET' }, accessToken);
+}
+
+export async function updateProfile(
+  accessToken: string,
+  payload: ProfileUpdatePayload,
+): Promise<AuthUser> {
+  return jsonRequest('/users/me/profile', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  }, accessToken);
+}
+
+export async function updatePassword(
+  accessToken: string,
+  payload: PasswordUpdatePayload,
+): Promise<{ success: boolean; message: string }> {
+  return jsonRequest('/users/me/password', {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  }, accessToken);
+}

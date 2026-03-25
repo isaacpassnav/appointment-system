@@ -91,6 +91,8 @@ export class AppointmentsService {
     }
 
     this.scheduleAppointmentNotifications({
+      tenantId,
+      appointmentId: appointment.id,
       email: user.email,
       fullName: user.fullName,
       startsAtIso: startsAt.toISOString(),
@@ -161,6 +163,8 @@ export class AppointmentsService {
   }
 
   private scheduleAppointmentNotifications(params: {
+    tenantId: string;
+    appointmentId: string;
     email: string;
     fullName: string;
     startsAtIso: string;
@@ -176,6 +180,8 @@ export class AppointmentsService {
 
     const tasks: Promise<void>[] = [
       this.notificationsService.enqueueAppointmentConfirmationEmail({
+        tenantId: params.tenantId,
+        appointmentId: params.appointmentId,
         to: params.email,
         fullName: params.fullName,
         startsAtIso: params.startsAtIso,
@@ -185,6 +191,8 @@ export class AppointmentsService {
     if (reminder24DelayMs > 0) {
       tasks.push(
         this.notificationsService.enqueueAppointmentReminderEmail({
+          tenantId: params.tenantId,
+          appointmentId: params.appointmentId,
           to: params.email,
           fullName: params.fullName,
           startsAtIso: params.startsAtIso,
@@ -197,6 +205,8 @@ export class AppointmentsService {
     if (reminder1DelayMs > 0) {
       tasks.push(
         this.notificationsService.enqueueAppointmentReminderEmail({
+          tenantId: params.tenantId,
+          appointmentId: params.appointmentId,
           to: params.email,
           fullName: params.fullName,
           startsAtIso: params.startsAtIso,

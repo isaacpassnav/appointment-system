@@ -18,12 +18,153 @@
   padding: 14px;
 }
 
+.tenant-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(148, 118, 255, 0.15);
+}
+
 .tenant-sidebar-title {
-  margin: 4px 0 10px;
+  margin: 0;
   font-size: 0.72rem;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: hsl(var(--muted-foreground));
+}
+
+/* Role Badge */
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  border: 1px solid;
+}
+
+/* Tenant Switcher */
+.tenant-switcher {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.tenant-switcher-trigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 118, 255, 0.2);
+  background: rgba(15, 14, 30, 0.6);
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tenant-switcher-trigger:hover {
+  border-color: rgba(148, 118, 255, 0.4);
+  background: rgba(15, 14, 30, 0.8);
+}
+
+.tenant-switcher-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.tenant-switcher-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.tenant-switcher-role {
+  font-size: 0.7rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.tenant-switcher-chevron {
+  flex-shrink: 0;
+  transition: transform 0.2s ease;
+  color: hsl(var(--muted-foreground));
+}
+
+.tenant-switcher-chevron.open {
+  transform: rotate(180deg);
+}
+
+.tenant-switcher-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin-top: 6px;
+  padding: 8px;
+  background: rgba(21, 19, 44, 0.98);
+  border: 1px solid rgba(148, 118, 255, 0.25);
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
+  z-index: 50;
+}
+
+.tenant-switcher-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: hsl(var(--muted-foreground));
+  padding: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.tenant-switcher-option {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: transparent;
+  border: none;
+  color: hsl(var(--foreground));
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.tenant-switcher-option:hover {
+  background: rgba(129, 89, 255, 0.15);
+}
+
+.tenant-switcher-option.active {
+  background: rgba(129, 89, 255, 0.25);
+}
+
+.tenant-switcher-option-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.tenant-switcher-option-role {
+  font-size: 0.7rem;
+  color: hsl(var(--muted-foreground));
+  text-transform: uppercase;
 }
 
 .tenant-nav {

@@ -50,6 +50,8 @@
 - [x] Email provider integration (Brevo SMTP principal + fallback a Resend + fallback directo si falla queue)
 - [ ] WhatsApp provider integration (optional for MVP scope)
 - [ ] Contract tests/e2e for users and appointments routes
+- [x] Notification delivery metrics endpoint (`GET /api/notifications/metrics`)
+- [x] Dead-letter queue explicita (`notifications-dead-letter`) en fallo final
 
 ## 7) Minimal "Ready for Frontend" Definition
 Implemented to start frontend integration:
@@ -83,3 +85,4 @@ npm run db:seed
   - confirmation email (immediate)
   - reminder 24h before (delayed job)
   - reminder 1h before (delayed job)
+- Appointment email jobs now create/update `NotificationLog` (`QUEUED` -> `SENT` / `FAILED`).

@@ -3,6 +3,7 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import path from 'path';
 import { MailModule } from '../mail/mail.module';
+import { PrismaModule } from '../prisma/prisma.module';
 import { NOTIFICATIONS_QUEUE_NAME } from './notifications.constants';
 import { NotificationsProcessor } from './notifications.processor';
 
@@ -79,6 +80,7 @@ function resolveRedisUrl(configService: ConfigService) {
     BullModule.registerQueue({
       name: NOTIFICATIONS_QUEUE_NAME,
     }),
+    PrismaModule,
     MailModule,
   ],
   providers: [NotificationsProcessor],

@@ -35,6 +35,10 @@
   --radius-xl: 30px;
   --radius-lg: 22px;
   --radius-md: 14px;
+
+  /* Typography scale with new fonts */
+  --font-sans: var(--font-body), system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-heading), system-ui, -apple-system, sans-serif;
 }
 
 @layer base {
@@ -44,6 +48,13 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: 'cv11', 'ss01';
+    font-variation-settings: 'opsz' 32;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
   }
 }
 

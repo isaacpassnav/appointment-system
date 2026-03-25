@@ -1,11 +1,13 @@
-export type UserRole = 'ADMIN' | 'STAFF' | 'CLIENT';
+export type UserRole = 'SUPERADMIN' | 'RESELLER' | 'ADMIN' | 'STAFF' | 'CLIENT';
 
 export type AuthUser = {
   id: string;
   email: string;
   fullName: string;
+  phone?: string | null;
   timezone: string;
   role: UserRole;
+  emailVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;
 };
