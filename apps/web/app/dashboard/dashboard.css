@@ -66,6 +66,14 @@
   min-width: 0;
 }
 
+.tenant-topbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .tenant-topbar-toggle {
   display: inline-flex;
   align-items: center;
@@ -617,11 +625,22 @@
   }
 
   .tenant-topbar {
+    align-items: stretch;
     padding: 16px 18px;
   }
 
   .tenant-topbar-toggle {
     display: none;
+  }
+
+  .tenant-topbar-left {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .tenant-topbar-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 
   .tenant-main {
@@ -639,6 +658,14 @@
     grid-template-columns: 1fr;
   }
 
+  .tenant-panel {
+    padding: 16px;
+  }
+
+  .tenant-chart-wrap {
+    height: 240px;
+  }
+
   .tenant-table-row {
     grid-template-columns: 1fr;
     gap: 8px;
@@ -646,5 +673,62 @@
 
   .tenant-table-head {
     display: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .tenant-topbar {
+    gap: 12px;
+    min-height: auto;
+    padding: 14px;
+  }
+
+  .tenant-topbar-left {
+    gap: 10px;
+  }
+
+  .tenant-topbar-actions {
+    gap: 8px;
+  }
+
+  .tenant-topbar-actions > * {
+    flex-shrink: 0;
+  }
+
+  .tenant-main {
+    gap: 18px;
+    padding: 14px;
+  }
+
+  .tenant-mobile-nav {
+    margin: 0 -2px;
+    padding-bottom: 2px;
+  }
+
+  .tenant-overview-title {
+    font-size: clamp(1.7rem, 8vw, 2.15rem);
+  }
+
+  .tenant-overview-meta {
+    font-size: 0.9rem;
+    line-height: 1.5;
+  }
+
+  .tenant-appointment-item,
+  .tenant-notification-item {
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: flex-start;
+  }
+
+  .tenant-appointment-time,
+  .tenant-notification-time {
+    grid-column: 2;
+    margin-top: -2px;
+    white-space: normal;
+  }
+
+  .tenant-summary-row {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordVisibilityToggle } from '@/components/ui/password-visibility-toggle';
 import { isApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/providers/auth-provider';
@@ -107,15 +108,12 @@ export default function SignupPage() {
                   onChange={(event) => setForm((prev) => ({ ...prev, password: event.target.value }))}
                   required
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="password-toggle"
-                  onClick={() => setShowPassword((value) => !value)}
-                >
-                  {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                </Button>
+                <PasswordVisibilityToggle
+                  visible={showPassword}
+                  onToggle={() => setShowPassword((value) => !value)}
+                  visibleLabel={t('auth.hidePassword')}
+                  hiddenLabel={t('auth.showPassword')}
+                />
               </div>
             </div>
             <div className="grid gap-2">
@@ -130,15 +128,12 @@ export default function SignupPage() {
                   onChange={(event) => setConfirmPassword(event.target.value)}
                   required
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="password-toggle"
-                  onClick={() => setShowConfirm((value) => !value)}
-                >
-                  {showConfirm ? t('auth.hidePassword') : t('auth.showPassword')}
-                </Button>
+                <PasswordVisibilityToggle
+                  visible={showConfirm}
+                  onToggle={() => setShowConfirm((value) => !value)}
+                  visibleLabel={t('auth.hidePassword')}
+                  hiddenLabel={t('auth.showPassword')}
+                />
               </div>
             </div>
             <div className="grid gap-2">

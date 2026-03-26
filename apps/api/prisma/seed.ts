@@ -188,6 +188,19 @@ async function run() {
     ];
 
     await Promise.all(
+      users.map((user) =>
+        prisma.tenantMember.updateMany({
+          where: {
+            userId: user.id,
+          },
+          data: {
+            status: 'SUSPENDED',
+          },
+        }),
+      ),
+    );
+
+    await Promise.all(
       memberships.map((membership) =>
         prisma.tenantMember.upsert({
           where: {

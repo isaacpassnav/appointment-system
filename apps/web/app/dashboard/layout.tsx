@@ -562,7 +562,7 @@ export default function DashboardLayout({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3">
+          <div className="tenant-topbar-actions">
             <LanguageSwitcher
               className="border border-slate-200 bg-white text-slate-700 hover:bg-slate-50 hover:text-slate-900"
               menuClassName="border-slate-200 bg-white text-slate-900 shadow-xl"

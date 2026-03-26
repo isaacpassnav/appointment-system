@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordVisibilityToggle } from '@/components/ui/password-visibility-toggle';
 import { updatePassword, updateProfile, ApiError } from '@/lib/api';
 import { useAuth } from '@/providers/auth-provider';
 
@@ -29,6 +30,9 @@ export function ProfileEditForm() {
     newPassword: '',
     confirmPassword: '',
   });
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const timezones = [
     'UTC',
@@ -141,6 +145,9 @@ export function ProfileEditForm() {
       newPassword: '',
       confirmPassword: '',
     });
+    setShowCurrentPassword(false);
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
   };
 
   if (!user) return null;
@@ -286,58 +293,82 @@ export function ProfileEditForm() {
               <Label htmlFor="currentPassword">
                 {t('settings.currentPassword', 'Current Password')}
               </Label>
-              <Input
-                id="currentPassword"
-                type="password"
-                value={passwordData.currentPassword}
-                onChange={(event) =>
-                  setPasswordData({
-                    ...passwordData,
-                    currentPassword: event.target.value,
-                  })
-                }
-                placeholder="Enter your current password"
-                required
-              />
+              <div className="password-field">
+                <Input
+                  id="currentPassword"
+                  type={showCurrentPassword ? 'text' : 'password'}
+                  value={passwordData.currentPassword}
+                  onChange={(event) =>
+                    setPasswordData({
+                      ...passwordData,
+                      currentPassword: event.target.value,
+                    })
+                  }
+                  placeholder="Enter your current password"
+                  required
+                />
+                <PasswordVisibilityToggle
+                  visible={showCurrentPassword}
+                  onToggle={() => setShowCurrentPassword((value) => !value)}
+                  visibleLabel={t('auth.hidePassword')}
+                  hiddenLabel={t('auth.showPassword')}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="newPassword">
                 {t('settings.newPassword', 'New Password')}
               </Label>
-              <Input
-                id="newPassword"
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(event) =>
-                  setPasswordData({
-                    ...passwordData,
-                    newPassword: event.target.value,
-                  })
-                }
-                placeholder="Enter a new password"
-                required
-                minLength={8}
-              />
+              <div className="password-field">
+                <Input
+                  id="newPassword"
+                  type={showNewPassword ? 'text' : 'password'}
+                  value={passwordData.newPassword}
+                  onChange={(event) =>
+                    setPasswordData({
+                      ...passwordData,
+                      newPassword: event.target.value,
+                    })
+                  }
+                  placeholder="Enter a new password"
+                  required
+                  minLength={8}
+                />
+                <PasswordVisibilityToggle
+                  visible={showNewPassword}
+                  onToggle={() => setShowNewPassword((value) => !value)}
+                  visibleLabel={t('auth.hidePassword')}
+                  hiddenLabel={t('auth.showPassword')}
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="confirmPassword">
                 {t('settings.confirmPassword', 'Confirm New Password')}
               </Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(event) =>
-                  setPasswordData({
-                    ...passwordData,
-                    confirmPassword: event.target.value,
-                  })
-                }
-                placeholder="Confirm your new password"
-                required
-              />
+              <div className="password-field">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={passwordData.confirmPassword}
+                  onChange={(event) =>
+                    setPasswordData({
+                      ...passwordData,
+                      confirmPassword: event.target.value,
+                    })
+                  }
+                  placeholder="Confirm your new password"
+                  required
+                />
+                <PasswordVisibilityToggle
+                  visible={showConfirmPassword}
+                  onToggle={() => setShowConfirmPassword((value) => !value)}
+                  visibleLabel={t('auth.hidePassword')}
+                  hiddenLabel={t('auth.showPassword')}
+                />
+              </div>
             </div>
           </div>
 

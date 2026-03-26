@@ -950,14 +950,23 @@ img {
 }
 
 .password-field input {
-  padding-right: 84px;
+  padding-right: 58px;
 }
 
 .password-toggle {
   position: absolute;
-  right: 6px;
+  right: 4px;
   top: 50%;
   transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  color: #64748b;
+}
+
+.password-toggle:hover {
+  color: #0f172a;
+  background: rgba(148, 163, 184, 0.12);
 }
 
 .feedback {

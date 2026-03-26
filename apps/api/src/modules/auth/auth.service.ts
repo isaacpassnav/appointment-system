@@ -19,6 +19,17 @@ import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
+type TenantMembershipContext = {
+  role: TenantRole;
+  tenant: {
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+    resellerId: string | null;
+  };
+};
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -305,22 +316,18 @@ export class AuthService {
       const memberships = await this.usersService.listTenantMemberships(
         user.id,
       );
-      if (memberships.length === 1) {
+      if (memberships.length > 0) {
+        const defaultMembership = this.selectDefaultMembership(
+          user.role,
+          memberships,
+        );
         return {
-          tenantId: memberships[0].tenant.id,
-          tenantRole: memberships[0].role,
+          tenantId: defaultMembership.tenant.id,
+          tenantRole: defaultMembership.role,
         };
       }
 
-      throw new BadRequestException({
-        message: 'tenantId is required.',
-        tenants: memberships.map((item) => ({
-          id: item.tenant.id,
-          name: item.tenant.name,
-          slug: item.tenant.slug,
-          role: item.role,
-        })),
-      });
+      throw new ForbiddenException('No active tenant memberships found.');
     }
 
     const membership = await this.usersService.findTenantMembership(
@@ -363,6 +370,61 @@ export class AuthService {
 
   private isSuperadmin(role: UserRole) {
     return role === UserRole.SUPERADMIN || role === UserRole.ADMIN;
+  }
+
+  private selectDefaultMembership(
+    globalRole: UserRole,
+    memberships: TenantMembershipContext[],
+  ) {
+    if (memberships.length === 1) {
+      return memberships[0];
+    }
+
+    if (
+      globalRole === UserRole.SUPERADMIN ||
+      globalRole === UserRole.RESELLER
+    ) {
+      return memberships[0];
+    }
+
+    if (globalRole === UserRole.ADMIN) {
+      return (
+        memberships.find(
+          (membership) => membership.role === TenantRole.BUSINESS_ADMIN,
+        ) ?? memberships[0]
+      );
+    }
+
+    if (globalRole === UserRole.STAFF) {
+      return (
+        memberships.find(
+          (membership) => membership.role === TenantRole.STAFF,
+        ) ??
+        memberships.find(
+          (membership) => membership.role === TenantRole.CLIENT,
+        ) ??
+        memberships[0]
+      );
+    }
+
+    if (globalRole === UserRole.CLIENT) {
+      return (
+        memberships.find(
+          (membership) => membership.role === TenantRole.CLIENT,
+        ) ?? memberships[0]
+      );
+    }
+
+    const tenantRolePriority: Record<TenantRole, number> = {
+      BUSINESS_ADMIN: 0,
+      STAFF: 1,
+      CLIENT: 2,
+    };
+
+    return [...memberships].sort(
+      (left, right) =>
+        tenantRolePriority[left.role] - tenantRolePriority[right.role],
+    )[0];
   }
 
   private slugifyTenantName(value: string) {
