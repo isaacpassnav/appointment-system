@@ -83,6 +83,8 @@ describe('AuthService', () => {
     jest
       .spyOn(usersService, 'setRefreshTokenHash')
       .mockResolvedValue(undefined);
+    const createdAt = new Date();
+    const updatedAt = new Date();
     jest.spyOn(usersService, 'findOne').mockResolvedValue({
       id: 'user-client',
       email: 'demo.client@appointment.local',
@@ -91,8 +93,8 @@ describe('AuthService', () => {
       timezone: 'America/Lima',
       role: UserRole.CLIENT,
       emailVerified: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt,
+      updatedAt,
     } as Awaited<ReturnType<UsersService['findOne']>>);
 
     const authService = new AuthService(
@@ -156,6 +158,8 @@ describe('AuthService', () => {
     jest
       .spyOn(usersService, 'setRefreshTokenHash')
       .mockResolvedValue(undefined);
+    const createdAt = new Date();
+    const updatedAt = new Date();
     jest.spyOn(usersService, 'findOne').mockResolvedValue({
       id: 'user-admin',
       email: 'demo.admin@appointment.local',
@@ -164,8 +168,8 @@ describe('AuthService', () => {
       timezone: 'America/Lima',
       role: UserRole.ADMIN,
       emailVerified: true,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      createdAt,
+      updatedAt,
     } as Awaited<ReturnType<UsersService['findOne']>>);
 
     const authService = new AuthService(
