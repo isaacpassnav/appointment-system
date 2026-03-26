@@ -3,6 +3,7 @@ node_modules/
 # Build artifacts
 apps/*/dist/
 coverage/
+.cursor/
 
 # Environment files
 .env
