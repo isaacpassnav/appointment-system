@@ -174,6 +174,27 @@ export type PasswordUpdatePayload = {
   newPassword: string;
 };
 
+export type NotificationMetricsResponse = {
+  window: {
+    days: number;
+    from: string;
+    to: string;
+  };
+  totals: {
+    queued: number;
+    sent: number;
+    failed: number;
+    processed: number;
+    sentRate: number;
+  };
+  byTemplate: Array<{
+    template: string;
+    queued: number;
+    sent: number;
+    failed: number;
+  }>;
+};
+
 export async function getProfile(accessToken: string): Promise<AuthUser> {
   return jsonRequest('/users/me/profile', { method: 'GET' }, accessToken);
 }
@@ -196,4 +217,12 @@ export async function updatePassword(
     method: 'PATCH',
     body: JSON.stringify(payload),
   }, accessToken);
+}
+
+export async function getNotificationMetrics(
+  accessToken: string,
+  days = 7,
+): Promise<NotificationMetricsResponse> {
+  const query = new URLSearchParams({ days: String(days) }).toString();
+  return jsonRequest(`/notifications/metrics?${query}`, { method: 'GET' }, accessToken);
 }

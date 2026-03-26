@@ -11,6 +11,26 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateAppointmentDto } from './dto/create-appointment.dto';
 import { IdempotencyCacheService } from './idempotency-cache.service';
 
+const appointmentListSelect = {
+  id: true,
+  tenantId: true,
+  userId: true,
+  startsAt: true,
+  endsAt: true,
+  status: true,
+  notes: true,
+  cancelledAt: true,
+  createdAt: true,
+  updatedAt: true,
+  user: {
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -105,12 +125,14 @@ export class AppointmentsService {
     return this.prisma.appointment.findMany({
       where: { userId, tenantId },
       orderBy: { startsAt: 'asc' },
+      select: appointmentListSelect,
     });
   }
 
   async findOne(userId: string, tenantId: string, id: string) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
+      select: appointmentListSelect,
     });
 
     if (!appointment) {

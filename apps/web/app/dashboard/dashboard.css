@@ -1,20 +1,98 @@
 .dashboard-app-shell {
   min-height: 100vh;
-  padding: 24px;
-  background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+  overflow-x: clip;
+  background:
+    radial-gradient(circle at top left, rgba(196, 181, 253, 0.18), transparent 24rem),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
 }
 
-.tenant-dashboard-layout {
+.tenant-shell {
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
+  grid-template-columns: 270px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.tenant-shell.is-sidebar-collapsed {
+  grid-template-columns: 88px minmax(0, 1fr);
+}
+
+.tenant-sidebar {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  padding: 20px 16px;
+  border-right: 1px solid rgba(226, 232, 240, 0.9);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+}
+
+.tenant-sidebar-scroll {
+  height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.tenant-sidebar-divider {
+  width: 100%;
+  height: 1px;
+  margin: 6px 0;
+  background: rgba(226, 232, 240, 0.95);
+}
+
+.tenant-main-shell {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto 1fr;
+}
+
+.tenant-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 76px;
+  padding: 16px 24px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.92);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(14px);
+}
+
+.tenant-topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.tenant-topbar-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  border-radius: 14px;
+  background: #ffffff;
+  color: #475569;
+  transition:
+    background 0.18s ease,
+    color 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.tenant-topbar-toggle:hover {
+  background: #f8fafc;
+  color: #0f172a;
+  border-color: rgba(203, 213, 225, 0.95);
 }
 
 .tenant-main {
   min-width: 0;
   display: grid;
-  gap: 20px;
+  gap: 24px;
+  padding: 24px;
 }
 
 .tenant-mobile-nav {
@@ -76,13 +154,13 @@
 .tenant-grid-4 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .tenant-grid-2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 14px;
+  gap: 16px;
 }
 
 .tenant-kpi-card {
@@ -98,12 +176,30 @@
   padding: 18px;
 }
 
+.tenant-kpi-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .tenant-kpi-label {
   margin: 0;
   font-size: 0.76rem;
   color: #64748b;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+}
+
+.tenant-kpi-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  background: #f5f3ff;
+  color: #7c3aed;
 }
 
 .tenant-kpi-value {
@@ -148,6 +244,163 @@
 .tenant-panel-title {
   margin: 0 0 14px;
   font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.tenant-overview-header {
+  display: grid;
+  gap: 6px;
+}
+
+.tenant-overview-title {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.7rem);
+  line-height: 1.05;
+  color: #0f172a;
+}
+
+.tenant-overview-meta {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.98rem;
+}
+
+.tenant-overview-shell {
+  display: grid;
+  gap: 24px;
+}
+
+.tenant-overview-columns {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.8fr);
+  gap: 24px;
+}
+
+.tenant-stack {
+  display: grid;
+  gap: 24px;
+}
+
+.tenant-appointment-list {
+  display: grid;
+  gap: 12px;
+}
+
+.tenant-appointment-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #f8fafc;
+  padding: 14px 16px;
+}
+
+.tenant-appointment-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #7c3aed;
+}
+
+.tenant-appointment-name {
+  margin: 0;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tenant-appointment-detail {
+  margin: 4px 0 0;
+  font-size: 0.86rem;
+  color: #64748b;
+}
+
+.tenant-appointment-time {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.tenant-notification-list {
+  display: grid;
+  gap: 12px;
+}
+
+.tenant-notification-item {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border-radius: 16px;
+  border: 1px solid rgba(226, 232, 240, 0.95);
+  background: #f8fafc;
+  padding: 14px 16px;
+}
+
+.tenant-notification-pulse {
+  width: 10px;
+  height: 10px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: #7c3aed;
+}
+
+.tenant-notification-item.is-read .tenant-notification-pulse {
+  background: #cbd5e1;
+}
+
+.tenant-notification-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.tenant-notification-detail {
+  margin: 4px 0 0;
+  font-size: 0.83rem;
+  line-height: 1.5;
+  color: #64748b;
+}
+
+.tenant-notification-time {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #94a3b8;
+  white-space: nowrap;
+}
+
+.tenant-summary-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.tenant-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.95);
+  padding-bottom: 12px;
+}
+
+.tenant-summary-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.tenant-summary-label {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.tenant-summary-value {
+  margin: 0;
+  font-size: 0.92rem;
   font-weight: 700;
   color: #0f172a;
 }
@@ -347,15 +600,32 @@
   .tenant-grid-4 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .tenant-overview-columns {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 980px) {
-  .dashboard-app-shell {
-    padding: 16px;
+  .tenant-shell,
+  .tenant-shell.is-sidebar-collapsed {
+    grid-template-columns: 1fr;
   }
 
-  .tenant-dashboard-layout {
-    grid-template-columns: 1fr;
+  .tenant-sidebar {
+    display: none;
+  }
+
+  .tenant-topbar {
+    padding: 16px 18px;
+  }
+
+  .tenant-topbar-toggle {
+    display: none;
+  }
+
+  .tenant-main {
+    padding: 18px;
   }
 
   .tenant-mobile-nav {

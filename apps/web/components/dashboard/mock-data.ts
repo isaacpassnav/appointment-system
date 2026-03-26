@@ -22,6 +22,10 @@ export function scopeByTenant<T extends TenantScoped>(
   return items.filter((item) => item.tenantId === tenantId);
 }
 
+export function getPrimaryTenantForRole(role: UserRole) {
+  return dashboardTenantsByRole[role][0];
+}
+
 export const dashboardTrends: DashboardTrendPoint[] = [
   { tenantId: DEFAULT_TENANT_ID, label: 'Mon', bookings: 28, revenue: 620, conversionRate: 34, customerGrowth: 4 },
   { tenantId: DEFAULT_TENANT_ID, label: 'Tue', bookings: 31, revenue: 710, conversionRate: 38, customerGrowth: 6 },
@@ -119,13 +123,13 @@ export const dashboardTenantsByRole: Record<UserRole, DashboardTenantSummary[]> 
   SUPERADMIN: [
     {
       id: DEFAULT_TENANT_ID,
-      name: 'AppointmentOS HQ',
+      name: 'AppointmentOS Control',
       role: 'SUPERADMIN',
       plan: 'enterprise',
     },
     {
       id: SECONDARY_TENANT_ID,
-      name: 'BelleVie Spa',
+      name: 'Clinica Dental Sonrisa',
       role: 'ADMIN',
       plan: 'pro',
     },
@@ -133,43 +137,39 @@ export const dashboardTenantsByRole: Record<UserRole, DashboardTenantSummary[]> 
   RESELLER: [
     {
       id: DEFAULT_TENANT_ID,
-      name: 'Growth Partner Group',
+      name: 'Partner Growth Group',
       role: 'RESELLER',
       plan: 'pro',
     },
     {
       id: SECONDARY_TENANT_ID,
-      name: 'BelleVie Spa',
+      name: 'Clinica Dental Sonrisa',
       role: 'ADMIN',
-      plan: 'trial',
-      trialDaysLeft: 9,
+      plan: 'pro',
     },
   ],
   ADMIN: [
     {
       id: DEFAULT_TENANT_ID,
-      name: 'BelleVie Spa',
+      name: 'Clinica Dental Sonrisa',
       role: 'ADMIN',
-      plan: 'trial',
-      trialDaysLeft: 9,
+      plan: 'pro',
     },
   ],
   STAFF: [
     {
       id: DEFAULT_TENANT_ID,
-      name: 'BelleVie Spa',
+      name: 'Clinica Dental Sonrisa',
       role: 'STAFF',
-      plan: 'trial',
-      trialDaysLeft: 9,
+      plan: 'pro',
     },
   ],
   CLIENT: [
     {
       id: DEFAULT_TENANT_ID,
-      name: 'BelleVie Spa',
+      name: 'Clinica Dental Sonrisa',
       role: 'CLIENT',
-      plan: 'trial',
-      trialDaysLeft: 9,
+      plan: 'pro',
     },
   ],
 };

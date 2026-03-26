@@ -74,7 +74,14 @@ export class AuthService {
       verifyUrl,
     });
 
-    return { user, ...tokens };
+    return {
+      user: await this.buildSessionUser(
+        user.id,
+        tenant.id,
+        TenantRole.BUSINESS_ADMIN,
+      ),
+      ...tokens,
+    };
   }
 
   async signIn(dto: SignInDto) {
@@ -105,8 +112,14 @@ export class AuthService {
     });
     await this.usersService.setRefreshTokenHash(user.id, tokens.refreshToken);
 
-    const publicUser = await this.usersService.findOne(user.id);
-    return { user: publicUser, ...tokens };
+    return {
+      user: await this.buildSessionUser(
+        user.id,
+        tenantContext.tenantId,
+        tenantContext.tenantRole,
+      ),
+      ...tokens,
+    };
   }
 
   async refresh(dto: RefreshTokenDto) {
@@ -174,8 +187,8 @@ export class AuthService {
     return { success: true };
   }
 
-  async me(userId: string) {
-    return this.usersService.findOne(userId);
+  async me(userId: string, tenantId?: string, tenantRole?: TenantRole) {
+    return this.buildSessionUser(userId, tenantId, tenantRole);
   }
 
   async verifyEmail(token: string) {
@@ -497,5 +510,46 @@ export class AuthService {
     }
 
     return Math.floor(parsed * 60 * 1000);
+  }
+
+  private async buildSessionUser(
+    userId: string,
+    tenantId?: string,
+    tenantRole?: TenantRole,
+  ) {
+    const [user, memberships] = await Promise.all([
+      this.usersService.findOne(userId),
+      this.usersService.listTenantMemberships(userId),
+    ]);
+
+    const activeMembership =
+      memberships.find((membership) => membership.tenant.id === tenantId) ??
+      memberships[0];
+
+    return {
+      ...user,
+      tenantId: activeMembership?.tenant.id ?? tenantId,
+      tenantRole: tenantRole ?? activeMembership?.role,
+      activeTenant: activeMembership
+        ? {
+            id: activeMembership.tenant.id,
+            name: activeMembership.tenant.name,
+            slug: activeMembership.tenant.slug,
+            status: activeMembership.tenant.status,
+            resellerId: activeMembership.tenant.resellerId,
+            role: activeMembership.role,
+          }
+        : null,
+      memberships: memberships.map((membership) => ({
+        role: membership.role,
+        tenant: {
+          id: membership.tenant.id,
+          name: membership.tenant.name,
+          slug: membership.tenant.slug,
+          status: membership.tenant.status,
+          resellerId: membership.tenant.resellerId,
+        },
+      })),
+    };
   }
 }

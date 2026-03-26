@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import type { LucideIcon } from 'lucide-react';
 import { TrendingDown, TrendingUp } from 'lucide-react';
 import { AnimatedCounter } from '@/components/animated-counter';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,12 +12,14 @@ export function KpiCard({
   suffix,
   trend,
   trendLabel,
+  icon: Icon,
 }: {
   label: string;
   value: number;
   suffix?: string;
   trend: number;
   trendLabel: string;
+  icon?: LucideIcon;
 }) {
   const trendPositive = trend >= 0;
 
@@ -24,7 +27,14 @@ export function KpiCard({
     <motion.div whileHover={{ y: -6 }} transition={{ type: 'spring', stiffness: 260, damping: 18 }}>
       <Card className="tenant-kpi-card">
         <CardContent className="tenant-kpi-content">
-          <p className="tenant-kpi-label">{label}</p>
+          <div className="tenant-kpi-header">
+            <p className="tenant-kpi-label">{label}</p>
+            {Icon ? (
+              <span className="tenant-kpi-icon">
+                <Icon size={17} aria-hidden={true} />
+              </span>
+            ) : null}
+          </div>
           <p className="tenant-kpi-value">
             <AnimatedCounter value={value} suffix={suffix} duration={1.6} />
           </p>

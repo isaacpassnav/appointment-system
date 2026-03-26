@@ -1,4 +1,19 @@
 export type UserRole = 'SUPERADMIN' | 'RESELLER' | 'ADMIN' | 'STAFF' | 'CLIENT';
+export type TenantRole = 'BUSINESS_ADMIN' | 'STAFF' | 'CLIENT';
+export type TenantStatus = 'ACTIVE' | 'SUSPENDED';
+
+export type AuthTenant = {
+  id: string;
+  name: string;
+  slug: string;
+  status: TenantStatus;
+  resellerId?: string | null;
+};
+
+export type AuthTenantMembership = {
+  role: TenantRole;
+  tenant: AuthTenant;
+};
 
 export type AuthUser = {
   id: string;
@@ -8,6 +23,10 @@ export type AuthUser = {
   phone?: string | null;
   timezone: string;
   role: UserRole;
+  tenantId?: string;
+  tenantRole?: TenantRole;
+  activeTenant?: (AuthTenant & { role: TenantRole }) | null;
+  memberships?: AuthTenantMembership[];
   emailVerified?: boolean;
   createdAt?: string;
   updatedAt?: string;
@@ -20,6 +39,7 @@ export type AuthTokens = {
 
 export type Appointment = {
   id: string;
+  tenantId: string;
   userId: string;
   startsAt: string;
   endsAt: string;
@@ -28,6 +48,11 @@ export type Appointment = {
   cancelledAt?: string | null;
   createdAt: string;
   updatedAt: string;
+  user?: {
+    id: string;
+    fullName: string;
+    email: string;
+  };
 };
 
 export type SignUpPayload = {
