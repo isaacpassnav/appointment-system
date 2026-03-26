@@ -70,9 +70,9 @@ export function IntegrationRow() {
           {track.map((integration, index) => (
             <article
               key={`${integration.name}-${index}`}
-              className="flex min-h-[90px] w-[230px] items-center gap-3 rounded-2xl border border-primary/25 bg-gradient-to-br from-[#15132c] to-[#2b1f52b8] p-3 shadow-xl shadow-black/30"
+              className="flex min-h-[90px] w-[230px] items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-slate-900 shadow-sm"
             >
-              <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-xl bg-white/5">
+              <div className="grid h-12 w-12 flex-shrink-0 place-items-center rounded-xl bg-slate-100">
                 <Image
                   src={integration.logo}
                   alt={`${integration.name} logo`}
@@ -84,7 +84,10 @@ export function IntegrationRow() {
               </div>
               <div className="grid gap-1">
                 <p className="m-0 font-bold leading-tight">{integration.name}</p>
-                <Badge variant="secondary" className="w-fit">
+                <Badge
+                  variant="secondary"
+                  className="w-fit border-slate-200 bg-slate-100 text-slate-700"
+                >
                   {integration.channel}
                 </Badge>
               </div>

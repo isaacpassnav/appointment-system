@@ -140,7 +140,7 @@ export function HomeContent() {
   }, [activeTestimonial, testimonials]);
 
   return (
-    <main className="space-y-16 py-10">
+    <main className="space-y-16 py-10 text-slate-950">
       <section className="container">
         <motion.div
           initial={{ opacity: 0, y: 24 }}
@@ -160,13 +160,22 @@ export function HomeContent() {
               <Button size="lg" asChild>
                 <Link href="/signup">{t('home.ctaPrimary')}</Link>
               </Button>
-              <Button size="lg" variant="outline" asChild>
+              <Button
+                size="lg"
+                variant="outline"
+                asChild={true}
+                className="border-slate-300 text-slate-800 hover:bg-slate-100"
+              >
                 <Link href="/dashboard">{t('home.ctaSecondary')}</Link>
               </Button>
             </div>
             <div className="hero-tags">
               {tags.map((tag) => (
-                <Badge key={tag} variant="secondary">
+                <Badge
+                  key={tag}
+                  variant="secondary"
+                  className="border-slate-200 bg-white text-slate-700 shadow-sm"
+                >
                   {tag}
                 </Badge>
               ))}
@@ -175,9 +184,9 @@ export function HomeContent() {
         </motion.div>
       </section>
 
-      <section className="container impact-section rounded-3xl bg-card/50 p-6 sm:p-8">
+      <section className="container impact-section rounded-3xl p-6 sm:p-8">
         <div className="section-head">
-          <h2 className="text-3xl font-bold">{t('home.impactTitle')}</h2>
+          <h2 className="text-3xl font-bold text-slate-950">{t('home.impactTitle')}</h2>
           <p className="muted">{t('home.impactSubtitle')}</p>
         </div>
         <div className="impact-grid">
@@ -215,17 +224,17 @@ export function HomeContent() {
 
       <section
         id="integrations"
-        className="container rounded-3xl border border-border/60 bg-card/50 p-6 sm:p-8"
+        className="container rounded-3xl border border-slate-200 bg-white/80 p-6 text-slate-950 shadow-sm sm:p-8"
       >
         <div className="section-head">
-          <h2 className="text-3xl font-bold">{integrationCopy.title}</h2>
+          <h2 className="text-3xl font-bold text-slate-950">{integrationCopy.title}</h2>
           <p className="muted">{integrationCopy.subtitle}</p>
         </div>
         <IntegrationRow />
       </section>
 
       <section className="container split-grid">
-        <Card className="p-6 md:p-8">
+        <Card className="border-slate-200 bg-white text-slate-950 shadow-sm p-6 md:p-8">
           <div className="section-head">
             <h3 className="text-2xl font-bold">{t('home.modulesTitle')}</h3>
             <p className="muted">{t('home.modulesSubtitle')}</p>
@@ -240,7 +249,7 @@ export function HomeContent() {
           </div>
         </Card>
 
-        <Card className="accent-card p-6 md:p-8">
+        <Card className="accent-card border-0 p-6 text-slate-950 shadow-sm md:p-8">
           <div className="section-head">
             <h3 className="text-2xl font-bold">{t('home.businessTitle')}</h3>
             <p className="muted">{t('home.businessBody')}</p>
@@ -250,7 +259,11 @@ export function HomeContent() {
             <Button asChild>
               <Link href="/signup">{t('home.businessPrimary')}</Link>
             </Button>
-            <Button variant="outline" asChild>
+            <Button
+              variant="outline"
+              asChild={true}
+              className="border-slate-300 text-slate-800 hover:bg-slate-100"
+            >
               <Link href="/dashboard">{t('home.businessSecondary')}</Link>
             </Button>
           </div>
@@ -283,8 +296,8 @@ export function HomeContent() {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,118,255,0.2)" />
-                  <XAxis dataKey="period" stroke="#b7b3d4" />
-                  <YAxis stroke="#b7b3d4" />
+                  <XAxis dataKey="period" stroke="#d6d0f4" />
+                  <YAxis stroke="#d6d0f4" />
                   <Tooltip />
                   <Area
                     type="monotone"
@@ -331,14 +344,14 @@ export function HomeContent() {
 
       <section className="container">
         <div className="section-head">
-          <h2 className="text-3xl font-bold">{t('home.roadmapTitle')}</h2>
+          <h2 className="text-3xl font-bold text-slate-950">{t('home.roadmapTitle')}</h2>
           <p className="muted">{t('home.roadmapSubtitle')}</p>
         </div>
         <div className="roadmap-grid">
           {roadmap.map((item) => (
             <article key={item.step} className="roadmap-item">
               <p className="roadmap-step">{item.step}</p>
-              <h3 className="text-xl font-semibold">{item.title}</h3>
+              <h3 className="text-xl font-semibold text-slate-950">{item.title}</h3>
               <p className="muted">{item.detail}</p>
             </article>
           ))}
@@ -347,10 +360,10 @@ export function HomeContent() {
 
       <section
         id="pricing"
-        className="container rounded-3xl border border-border/60 bg-card/50 p-6 sm:p-8"
+        className="container rounded-3xl border border-slate-200 bg-white/80 p-6 text-slate-950 shadow-sm sm:p-8"
       >
         <div className="section-head">
-          <h2 className="text-3xl font-bold">{t('nav.pricing')}</h2>
+          <h2 className="text-3xl font-bold text-slate-950">{t('nav.pricing')}</h2>
           <p className="muted">
             {i18n.resolvedLanguage === 'es'
               ? 'Escala por etapas con planes claros para negocios y resellers.'
@@ -398,7 +411,7 @@ export function HomeContent() {
             tier="pro"
             price={activePricingTab === 'monthly' ? '$29/mo' : '$278/yr'}
             features={pricingFeatures}
-            popular
+            popular={true}
             ctaText={
               i18n.resolvedLanguage === 'es'
                 ? 'Mas elegido'
@@ -430,7 +443,7 @@ export function HomeContent() {
 
       <section className="container testimonial-section rounded-3xl p-6 sm:p-8">
         <div className="section-head">
-          <h2 className="text-3xl font-bold">{t('home.testimonialsTitle')}</h2>
+          <h2 className="text-3xl font-bold text-slate-950">{t('home.testimonialsTitle')}</h2>
           <p className="muted">{t('home.testimonialsSubtitle')}</p>
         </div>
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -439,10 +452,10 @@ export function HomeContent() {
               <div className="avatar">
                 <span>{item.name.slice(0, 2).toUpperCase()}</span>
               </div>
-              <p className="stars">★★★★★</p>
+              <p className="stars">5/5 rating</p>
               <p className="quote">{item.quote}</p>
               <div className="author">
-                <strong>{item.name}</strong>
+                <strong className="text-slate-950">{item.name}</strong>
                 <span className="muted">{item.role}</span>
               </div>
             </article>
@@ -452,10 +465,10 @@ export function HomeContent() {
 
       <section
         id="faq"
-        className="container rounded-3xl border border-border/60 bg-card/50 p-6 sm:p-8"
+        className="container rounded-3xl border border-slate-200 bg-white/80 p-6 text-slate-950 shadow-sm sm:p-8"
       >
         <div className="section-head">
-          <h2 className="text-3xl font-bold">{t('home.faqTitle')}</h2>
+          <h2 className="text-3xl font-bold text-slate-950">{t('home.faqTitle')}</h2>
           <p className="muted">{t('home.faqSubtitle')}</p>
         </div>
         <Accordion type="single" collapsible className="grid gap-3">
@@ -477,7 +490,12 @@ export function HomeContent() {
               <Button asChild size="lg">
                 <Link href="/signup">{t('home.ctaPrimary')}</Link>
               </Button>
-              <Button asChild variant="outline" size="lg">
+              <Button
+                asChild={true}
+                variant="outline"
+                size="lg"
+                className="border-slate-300 text-slate-800 hover:bg-slate-100"
+              >
                 <Link href="/login">{t('nav.login')}</Link>
               </Button>
             </div>

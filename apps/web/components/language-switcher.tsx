@@ -53,7 +53,11 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="lang-trigger">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="lang-trigger text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+        >
           <current.Flag className="flag-icon" aria-hidden={true} />
           {current.code.toUpperCase()}
         </Button>
