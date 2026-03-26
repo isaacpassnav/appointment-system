@@ -42,6 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { status, user, logout } = useAuth();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const isDashboardRoute = pathname.startsWith("/dashboard");
 
   // Dropdown nav items
   const productsItems = [
@@ -144,6 +145,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     if (typeof window === "undefined") return;
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
+
+  if (isDashboardRoute) {
+    return <div className="dashboard-app-shell">{children}</div>;
+  }
 
   return (
     <div className="site-wrapper">

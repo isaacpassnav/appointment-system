@@ -1,15 +1,19 @@
 import type {
   DashboardActivity,
   DashboardAppointment,
+  DashboardNotification,
   DashboardAutomation,
   DashboardCustomer,
   DashboardMessageLog,
   DashboardService,
+  DashboardTenantSummary,
   DashboardTrendPoint,
   TenantScoped,
 } from './types';
+import type { UserRole } from '@/lib/types';
 
 export const DEFAULT_TENANT_ID = 'tenant-default';
+export const SECONDARY_TENANT_ID = 'tenant-secondary';
 
 export function scopeByTenant<T extends TenantScoped>(
   items: T[],
@@ -67,3 +71,105 @@ export const recentActivityData: DashboardActivity[] = [
   { tenantId: DEFAULT_TENANT_ID, id: 'ra-002', kind: 'customer', title: 'New customer created', detail: 'Noah Smith joined from landing campaign', timestampIso: '2026-03-20T08:40:00.000Z' },
   { tenantId: DEFAULT_TENANT_ID, id: 'ra-003', kind: 'cancellation', title: 'Appointment canceled', detail: 'Liam Chen - Therapy Session', timestampIso: '2026-03-20T08:15:00.000Z' },
 ];
+
+export const dashboardNotifications: DashboardNotification[] = [
+  {
+    tenantId: DEFAULT_TENANT_ID,
+    id: 'dn-001',
+    title: 'New arrival: Lisa Wilson',
+    detail: 'Front desk confirmed a same-day booking.',
+    timeLabel: '10 min ago',
+    unread: true,
+  },
+  {
+    tenantId: DEFAULT_TENANT_ID,
+    id: 'dn-002',
+    title: 'Payment overdue: Mark Johnson',
+    detail: 'Invoice INV-1092 needs follow-up.',
+    timeLabel: '30 min ago',
+    unread: true,
+  },
+  {
+    tenantId: DEFAULT_TENANT_ID,
+    id: 'dn-003',
+    title: 'New client: Sarah Peterson',
+    detail: 'Profile created from booking form.',
+    timeLabel: '1 hour ago',
+    unread: true,
+  },
+  {
+    tenantId: DEFAULT_TENANT_ID,
+    id: 'dn-004',
+    title: 'Reminder sent',
+    detail: 'Staff meeting reminder delivered to 12 recipients.',
+    timeLabel: '3 hours ago',
+    unread: false,
+  },
+  {
+    tenantId: DEFAULT_TENANT_ID,
+    id: 'dn-005',
+    title: 'System update completed',
+    detail: 'Automation rules synced successfully.',
+    timeLabel: '1 day ago',
+    unread: false,
+  },
+];
+
+export const dashboardTenantsByRole: Record<UserRole, DashboardTenantSummary[]> = {
+  SUPERADMIN: [
+    {
+      id: DEFAULT_TENANT_ID,
+      name: 'AppointmentOS HQ',
+      role: 'SUPERADMIN',
+      plan: 'enterprise',
+    },
+    {
+      id: SECONDARY_TENANT_ID,
+      name: 'BelleVie Spa',
+      role: 'ADMIN',
+      plan: 'pro',
+    },
+  ],
+  RESELLER: [
+    {
+      id: DEFAULT_TENANT_ID,
+      name: 'Growth Partner Group',
+      role: 'RESELLER',
+      plan: 'pro',
+    },
+    {
+      id: SECONDARY_TENANT_ID,
+      name: 'BelleVie Spa',
+      role: 'ADMIN',
+      plan: 'trial',
+      trialDaysLeft: 9,
+    },
+  ],
+  ADMIN: [
+    {
+      id: DEFAULT_TENANT_ID,
+      name: 'BelleVie Spa',
+      role: 'ADMIN',
+      plan: 'trial',
+      trialDaysLeft: 9,
+    },
+  ],
+  STAFF: [
+    {
+      id: DEFAULT_TENANT_ID,
+      name: 'BelleVie Spa',
+      role: 'STAFF',
+      plan: 'trial',
+      trialDaysLeft: 9,
+    },
+  ],
+  CLIENT: [
+    {
+      id: DEFAULT_TENANT_ID,
+      name: 'BelleVie Spa',
+      role: 'CLIENT',
+      plan: 'trial',
+      trialDaysLeft: 9,
+    },
+  ],
+};

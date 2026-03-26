@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { SupportedLocale } from '@/lib/i18n';
+import { cn } from '@/lib/utils';
 
 type FlagIcon = ElementType<{ className?: string; 'aria-hidden'?: boolean }>;
 
@@ -25,7 +26,13 @@ const languages: Array<{
   { code: 'pt', label: 'Portugues', Flag: BR },
 ];
 
-export function LanguageSwitcher() {
+export function LanguageSwitcher({
+  className,
+  menuClassName,
+}: {
+  className?: string;
+  menuClassName?: string;
+}) {
   const { i18n } = useTranslation();
 
   useEffect(() => {
@@ -56,13 +63,16 @@ export function LanguageSwitcher() {
         <Button
           variant="ghost"
           size="sm"
-          className="lang-trigger text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+          className={cn(
+            'lang-trigger text-slate-700 hover:bg-slate-100 hover:text-slate-900',
+            className,
+          )}
         >
           <current.Flag className="flag-icon" aria-hidden={true} />
           {current.code.toUpperCase()}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="lang-menu">
+      <DropdownMenuContent align="end" className={cn('lang-menu', menuClassName)}>
         {languages.map((lang) => (
           <DropdownMenuItem key={lang.code} onClick={() => setLanguage(lang.code)}>
             <lang.Flag className="flag-icon" aria-hidden={true} />

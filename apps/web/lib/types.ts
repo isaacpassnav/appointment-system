@@ -4,6 +4,7 @@ export type AuthUser = {
   id: string;
   email: string;
   fullName: string;
+  avatarUrl?: string | null;
   phone?: string | null;
   timezone: string;
   role: UserRole;

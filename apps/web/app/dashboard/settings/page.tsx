@@ -1,14 +1,15 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { DashboardStateGuard } from '@/components/dashboard/dashboard-state-guard';
 import { ModuleHeader } from '@/components/dashboard/module-header';
 import { ProfileEditForm } from '@/components/profile-edit-form';
 import { useAuth } from '@/providers/auth-provider';
-import { Badge } from '@/components/ui/badge';
 
 function formatDate(value?: string) {
   if (!value) return '-';
+
   return new Date(value).toLocaleDateString(undefined, {
     year: 'numeric',
     month: 'short',
@@ -27,17 +28,19 @@ export default function DashboardSettingsPage() {
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        {/* Profile Card */}
-        <Card className="lg:col-span-2">
+        <Card className="border-slate-200 bg-white text-slate-950 shadow-sm lg:col-span-2">
           <CardContent className="p-6">
             <div className="mb-6 flex items-center gap-4">
               <div className="settings-avatar">
                 {user?.fullName?.charAt(0).toUpperCase() || '?'}
               </div>
               <div>
-                <h2 className="text-xl font-bold">{user?.fullName}</h2>
-                <p className="text-sm text-muted-foreground">{user?.email}</p>
-                <Badge variant="secondary" className="mt-1">
+                <h2 className="text-xl font-bold text-slate-950">{user?.fullName}</h2>
+                <p className="text-sm text-slate-500">{user?.email}</p>
+                <Badge
+                  variant="secondary"
+                  className="mt-1 border-slate-200 bg-slate-100 text-slate-700"
+                >
                   {user?.role}
                 </Badge>
               </div>
@@ -47,10 +50,11 @@ export default function DashboardSettingsPage() {
           </CardContent>
         </Card>
 
-        {/* Account Info Card */}
-        <Card>
+        <Card className="border-slate-200 bg-white text-slate-950 shadow-sm">
           <CardContent className="p-6">
-            <h3 className="mb-4 text-lg font-semibold">Account Information</h3>
+            <h3 className="mb-4 text-lg font-semibold text-slate-950">
+              Account Information
+            </h3>
             <div className="space-y-4">
               <div className="settings-field">
                 <span className="settings-field-label">User ID</span>
@@ -66,9 +70,9 @@ export default function DashboardSettingsPage() {
                 <span className="settings-field-label">Email Verified</span>
                 <span className="settings-field-value">
                   {user?.emailVerified ? (
-                    <span className="text-green-400">✓ Verified</span>
+                    <span className="font-semibold text-emerald-600">Verified</span>
                   ) : (
-                    <span className="text-yellow-400">Pending</span>
+                    <span className="font-semibold text-amber-500">Pending</span>
                   )}
                 </span>
               </div>
