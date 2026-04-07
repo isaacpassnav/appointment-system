@@ -7,9 +7,11 @@ import {
 } from '@nestjs/common';
 import { AppointmentStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
-import { PrismaService } from '../../prisma/prisma.service';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { PrismaService } from '@/prisma/prisma.service';
+import { CreateAppointmentDto, UpdateAppointmentDto } from './dto/create-appointment.dto';
 import { IdempotencyCacheService } from './idempotency-cache.service';
+import { AvailabilityService } from '../availability/availability.service';
+import { ClientsService } from '../clients/clients.service';
 
 const appointmentListSelect = {
   id: true,
@@ -39,6 +41,8 @@ export class AppointmentsService {
     private readonly prisma: PrismaService,
     private readonly idempotencyCache: IdempotencyCacheService,
     private readonly notificationsService: NotificationsService,
+    private readonly availabilityService: AvailabilityService,
+    private readonly clientsService: ClientsService,
   ) {}
 
   async create(
@@ -47,6 +51,7 @@ export class AppointmentsService {
     dto: CreateAppointmentDto,
     idempotencyKey?: string,
   ) {
+    // Validar usuario
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       select: {
@@ -65,6 +70,7 @@ export class AppointmentsService {
       throw new BadRequestException('Invalid startsAt format.');
     }
 
+    // Idempotencia
     const safeIdempotencyKey = this.normalizeIdempotencyKey(idempotencyKey);
     const cacheKey = safeIdempotencyKey
       ? this.buildCacheKey(tenantId, userId, safeIdempotencyKey)
@@ -77,12 +83,63 @@ export class AppointmentsService {
       }
     }
 
-    const endsAt = new Date(startsAt.getTime() + dto.durationMinutes * 60_000);
+    // Determinar duración (del servicio o del DTO)
+    let durationMinutes = dto.durationMinutes || 30;
+    let serviceName: string | undefined;
 
+    if (dto.serviceId) {
+      const service = await this.prisma.service.findFirst({
+        where: { id: dto.serviceId, tenantId, isActive: true },
+      });
+      if (!service) {
+        throw new NotFoundException('Service not found or inactive.');
+      }
+      // Usar duración del servicio si no se especificó una
+      if (!dto.durationMinutes) {
+        durationMinutes = service.duration;
+      }
+      serviceName = service.name;
+    }
+
+    const endsAt = new Date(startsAt.getTime() + durationMinutes * 60_000);
+
+    // Validar disponibilidad usando el módulo de availability
+    const dateStr = startsAt.toISOString().split('T')[0];
+    const availability = await this.availabilityService.getAvailableSlots(
+      tenantId,
+      { date: dateStr, durationMinutes },
+    );
+
+    if (availability.isBlocked) {
+      throw new ConflictException(
+        `This date is not available for booking${availability.exceptionReason ? `: ${availability.exceptionReason}` : '.'}`,
+      );
+    }
+
+    // Verificar que el slot esté disponible
+    const startTimeStr = startsAt.toISOString().slice(11, 16); // HH:mm
+    const matchingSlot = availability.slots.find(
+      (s) => s.startTime === startTimeStr && s.available,
+    );
+
+    if (!matchingSlot) {
+      throw new ConflictException(
+        'The selected time slot is not available. Please choose another time.',
+      );
+    }
+
+    // Validar cliente si se proporciona
+    if (dto.clientId) {
+      const client = await this.clientsService.findOne(tenantId, dto.clientId);
+      if (!client) {
+        throw new NotFoundException('Client not found.');
+      }
+    }
+
+    // Verificar conflictos con otras citas
     const conflict = await this.prisma.appointment.findFirst({
       where: {
         tenantId,
-        userId,
         status: {
           in: [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED],
         },
@@ -96,13 +153,24 @@ export class AppointmentsService {
       throw new ConflictException('Appointment overlaps with an existing one.');
     }
 
+    // Crear la cita
     const appointment = await this.prisma.appointment.create({
       data: {
         tenantId,
         userId,
+        clientId: dto.clientId || null,
+        serviceId: dto.serviceId || null,
         startsAt,
         endsAt,
         notes: dto.notes?.trim(),
+      },
+      include: {
+        service: {
+          select: { id: true, name: true, duration: true, price: true },
+        },
+        client: {
+          select: { id: true, name: true, email: true, phone: true },
+        },
       },
     });
 
@@ -145,14 +213,130 @@ export class AppointmentsService {
     return appointment;
   }
 
+  async update(
+    userId: string,
+    tenantId: string,
+    id: string,
+    dto: UpdateAppointmentDto,
+  ) {
+    const existing = await this.findOne(userId, tenantId, id);
+
+    if (existing.status === AppointmentStatus.CANCELLED) {
+      throw new BadRequestException('Cannot update a cancelled appointment.');
+    }
+
+    let startsAt = existing.startsAt;
+    let endsAt = existing.endsAt;
+    let durationMinutes =
+      (existing.endsAt.getTime() - existing.startsAt.getTime()) / 60_000;
+
+    // Si se actualiza el servicio
+    if (dto.serviceId !== undefined) {
+      if (dto.serviceId) {
+        const service = await this.prisma.service.findFirst({
+          where: { id: dto.serviceId, tenantId, isActive: true },
+        });
+        if (!service) {
+          throw new NotFoundException('Service not found or inactive.');
+        }
+        durationMinutes = service.duration;
+      } else {
+        // Si se quita el servicio, mantener duración actual
+      }
+    }
+
+    // Si se actualiza la fecha/hora
+    if (dto.startsAt) {
+      startsAt = new Date(dto.startsAt);
+      if (Number.isNaN(startsAt.getTime())) {
+        throw new BadRequestException('Invalid startsAt format.');
+      }
+
+      // Recalcular endsAt
+      endsAt = new Date(startsAt.getTime() + durationMinutes * 60_000);
+
+      // Validar disponibilidad
+      const dateStr = startsAt.toISOString().split('T')[0];
+      const availability = await this.availabilityService.getAvailableSlots(
+        tenantId,
+        { date: dateStr, durationMinutes },
+      );
+
+      if (availability.isBlocked) {
+        throw new ConflictException(
+          `This date is not available for booking${availability.exceptionReason ? `: ${availability.exceptionReason}` : '.'}`,
+        );
+      }
+
+      const startTimeStr = startsAt.toISOString().slice(11, 16);
+      const matchingSlot = availability.slots.find(
+        (s) => s.startTime === startTimeStr && s.available,
+      );
+
+      if (!matchingSlot) {
+        throw new ConflictException('The selected time slot is not available.');
+      }
+
+      // Verificar que no haya conflictos (excluyendo esta cita)
+      const conflict = await this.prisma.appointment.findFirst({
+        where: {
+          tenantId,
+          id: { not: id },
+          status: {
+            in: [AppointmentStatus.SCHEDULED, AppointmentStatus.CONFIRMED],
+          },
+          startsAt: { lt: endsAt },
+          endsAt: { gt: startsAt },
+        },
+        select: { id: true },
+      });
+
+      if (conflict) {
+        throw new ConflictException('Appointment overlaps with an existing one.');
+      }
+    }
+
+    const updated = await this.prisma.appointment.update({
+      where: { id },
+      data: {
+        startsAt,
+        endsAt,
+        serviceId: dto.serviceId !== undefined ? dto.serviceId : undefined,
+        notes: dto.notes !== undefined ? dto.notes?.trim() : undefined,
+      },
+      include: {
+        service: {
+          select: { id: true, name: true, duration: true, price: true, color: true },
+        },
+        client: {
+          select: { id: true, name: true, email: true, phone: true },
+        },
+      },
+    });
+
+    return updated;
+  }
+
   async cancel(userId: string, tenantId: string, id: string) {
-    await this.findOne(userId, tenantId, id);
+    const appointment = await this.findOne(userId, tenantId, id);
+
+    if (appointment.status === AppointmentStatus.CANCELLED) {
+      throw new BadRequestException('Appointment is already cancelled.');
+    }
 
     return this.prisma.appointment.update({
       where: { id },
       data: {
         status: AppointmentStatus.CANCELLED,
         cancelledAt: new Date(),
+      },
+      include: {
+        service: {
+          select: { id: true, name: true },
+        },
+        client: {
+          select: { id: true, name: true },
+        },
       },
     });
   }

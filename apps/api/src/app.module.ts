@@ -7,6 +7,11 @@ import path from 'path';
 import { AuthModule } from './modules/auth/auth.module';
 import { AppointmentsModule } from './modules/appointments/appointments.module';
 import { UsersModule } from './modules/users/users.module';
+import { ServicesModule } from './modules/services/services.module';
+import { AvailabilityModule } from './modules/availability/availability.module';
+import { ClientsModule } from './modules/clients/clients.module';
+import { TenantSettingsModule } from './modules/tenant-settings/tenant-settings.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { ThrottlerBehindProxyGuard } from './common/guards/throttler-behind-proxy.guard';
 import { TenantGuard } from './common/guards/tenant.guard';
 import { PrismaModule } from './prisma/prisma.module';
@@ -44,6 +49,11 @@ import { AppService } from './app.service';
     UsersModule,
     AuthModule,
     AppointmentsModule,
+    ServicesModule,
+    AvailabilityModule,
+    ClientsModule,
+    TenantSettingsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

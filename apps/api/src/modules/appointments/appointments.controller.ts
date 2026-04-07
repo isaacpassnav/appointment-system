@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import {
@@ -18,9 +19,9 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
-import type { JwtPayload } from '../auth/interfaces/jwt-payload.interface';
-import { CreateAppointmentDto } from './dto/create-appointment.dto';
+import { CreateAppointmentDto, UpdateAppointmentDto } from './dto/create-appointment.dto';
 import { AppointmentsService } from './appointments.service';
+import type { RequestTenantContext } from '@/common/interfaces/request-tenant-context.interface';
 
 @ApiTags('appointments')
 @ApiBearerAuth('access-token')
@@ -39,13 +40,13 @@ export class AppointmentsController {
   })
   @Post()
   create(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: RequestTenantContext,
     @Body() dto: CreateAppointmentDto,
     @Headers('x-idempotency-key') idempotencyKey?: string,
   ) {
     return this.appointmentsService.create(
-      user.sub,
-      user.tenantId,
+      user.userId,
+      user.tenantId!,
       dto,
       idempotencyKey,
     );
@@ -53,25 +54,45 @@ export class AppointmentsController {
 
   @ApiOperation({ summary: 'List current user appointments' })
   @Get()
-  findAll(@CurrentUser() user: JwtPayload) {
-    return this.appointmentsService.findAll(user.sub, user.tenantId);
+  findAll(@CurrentUser() user: RequestTenantContext) {
+    return this.appointmentsService.findAll(user.userId, user.tenantId!);
   }
 
   @ApiOperation({ summary: 'Get a single appointment by id' })
   @Get(':id')
   findOne(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: RequestTenantContext,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    return this.appointmentsService.findOne(user.sub, user.tenantId, id);
+    return this.appointmentsService.findOne(user.userId, user.tenantId!, id);
+  }
+
+  @ApiOperation({ summary: 'Update an appointment (reschedule or change service)' })
+  @Put(':id')
+  update(
+    @CurrentUser() user: RequestTenantContext,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateAppointmentDto,
+  ) {
+    return this.appointmentsService.update(user.userId, user.tenantId!, id, dto);
+  }
+
+  @ApiOperation({ summary: 'Update an appointment (partial)' })
+  @Patch(':id')
+  patch(
+    @CurrentUser() user: RequestTenantContext,
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() dto: UpdateAppointmentDto,
+  ) {
+    return this.appointmentsService.update(user.userId, user.tenantId!, id, dto);
   }
 
   @ApiOperation({ summary: 'Cancel an appointment by id' })
   @Patch(':id/cancel')
   cancel(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: RequestTenantContext,
     @Param('id', new ParseUUIDPipe()) id: string,
   ) {
-    return this.appointmentsService.cancel(user.sub, user.tenantId, id);
+    return this.appointmentsService.cancel(user.userId, user.tenantId!, id);
   }
 }
