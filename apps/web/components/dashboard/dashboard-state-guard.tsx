@@ -20,12 +20,12 @@ export function DashboardStateGuard({ children }: { children: ReactNode }) {
 
   if (status === 'unauthenticated' || !user) {
     return (
-      <Card>
+      <Card className="border-slate-200 bg-white text-slate-950 shadow-sm">
         <CardHeader>
-          <CardTitle>You are not logged in</CardTitle>
+          <CardTitle className="text-slate-950">You are not logged in</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm text-slate-500">
             Sign in to access tenant modules and analytics.
           </p>
           <div className="flex gap-3">

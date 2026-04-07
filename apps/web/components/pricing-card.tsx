@@ -51,7 +51,7 @@ export function PricingCard({
       transition={{ duration: 0.6 }}
       whileHover={{ y: -8, scale: 1.02 }}
       className={cn(
-        "relative overflow-hidden rounded-2xl border bg-card p-8 shadow-xl transition-all duration-500 hover:shadow-2xl",
+        "relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-8 text-slate-950 shadow-sm transition-all duration-500 hover:shadow-xl",
         popular && "ring-4 ring-primary/20 shadow-primary/20",
         className,
       )}
@@ -63,7 +63,7 @@ export function PricingCard({
       )}
       <div className="space-y-4 text-center">
         <h3 className="text-2xl font-bold">{config.name}</h3>
-        <p className="text-sm text-muted-foreground">{config.subtitle}</p>
+        <p className="text-sm text-slate-500">{config.subtitle}</p>
         <div className="text-4xl font-bold text-primary">{price}</div>
         <ul className="space-y-3">
           {features.map((feature, idx) => (
@@ -71,7 +71,7 @@ export function PricingCard({
               {isAvailable(feature, tier) ? (
                 <FaCheck className="h-5 w-5 text-green-500" />
               ) : (
-                <FaXmark className="h-5 w-5 text-muted-foreground" />
+                <FaXmark className="h-5 w-5 text-slate-400" />
               )}
               <span>{feature.text}</span>
             </li>

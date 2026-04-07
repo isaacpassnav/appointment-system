@@ -29,6 +29,7 @@ type AuthContextValue = {
   signUp: (payload: SignUpPayload) => Promise<void>;
   logout: () => Promise<void>;
   withAccessToken: <T>(fn: (accessToken: string) => Promise<T>) => Promise<T>;
+  updateUser: (user: AuthUser) => void;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -166,6 +167,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setSession(null, null);
   }, [setSession]);
 
+  const updateUser = useCallback((nextUser: AuthUser) => {
+    setUser(nextUser);
+  }, []);
+
   const withAccessToken = useCallback(
     async <T,>(fn: (accessToken: string) => Promise<T>): Promise<T> => {
       const current = tokensRef.current;
@@ -198,8 +203,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUp,
       logout,
       withAccessToken,
+      updateUser,
     }),
-    [logout, signIn, signUp, status, user, withAccessToken],
+    [logout, signIn, signUp, status, user, withAccessToken, updateUser],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

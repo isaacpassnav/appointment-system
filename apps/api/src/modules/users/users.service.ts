@@ -2,11 +2,13 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Prisma, TenantRole, UserRole } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdatePasswordDto, UpdateProfileDto } from './dto/update-profile.dto';
 
 const userPublicSelect = {
   id: true,
@@ -272,5 +274,64 @@ export class UsersService {
     });
 
     return user;
+  }
+
+  async updateProfile(userId: string, dto: UpdateProfileDto) {
+    const data: Prisma.UserUpdateInput = {};
+
+    if (dto.fullName !== undefined) {
+      data.fullName = dto.fullName.trim();
+    }
+    if (dto.phone !== undefined) {
+      data.phone = dto.phone.trim() || null;
+    }
+    if (dto.timezone !== undefined) {
+      data.timezone = dto.timezone.trim();
+    }
+
+    try {
+      return await this.prisma.user.update({
+        where: { id: userId },
+        data,
+        select: userPublicSelect,
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2025'
+      ) {
+        throw new NotFoundException('User not found.');
+      }
+      throw error;
+    }
+  }
+
+  async updatePassword(userId: string, dto: UpdatePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { passwordHash: true },
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found.');
+    }
+
+    const isCurrentPasswordValid = await bcrypt.compare(
+      dto.currentPassword,
+      user.passwordHash,
+    );
+
+    if (!isCurrentPasswordValid) {
+      throw new UnauthorizedException('Current password is incorrect.');
+    }
+
+    const newPasswordHash = await bcrypt.hash(dto.newPassword, 10);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: newPasswordHash },
+    });
+
+    return { success: true, message: 'Password updated successfully.' };
   }
 }

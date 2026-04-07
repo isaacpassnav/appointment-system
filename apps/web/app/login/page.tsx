@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { PasswordVisibilityToggle } from '@/components/ui/password-visibility-toggle';
 import { isApiError } from '@/lib/api';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/providers/auth-provider';
@@ -77,15 +78,12 @@ export default function LoginPage() {
                   onChange={(event) => setPassword(event.target.value)}
                   required
                 />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="password-toggle"
-                  onClick={() => setShowPassword((value) => !value)}
-                >
-                  {showPassword ? t('auth.hidePassword') : t('auth.showPassword')}
-                </Button>
+                <PasswordVisibilityToggle
+                  visible={showPassword}
+                  onToggle={() => setShowPassword((value) => !value)}
+                  visibleLabel={t('auth.hidePassword')}
+                  hiddenLabel={t('auth.showPassword')}
+                />
               </div>
             </div>
 

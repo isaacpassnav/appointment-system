@@ -19,6 +19,17 @@ import { SignInDto } from './dto/sign-in.dto';
 import { SignUpDto } from './dto/sign-up.dto';
 import { JwtPayload } from './interfaces/jwt-payload.interface';
 
+type TenantMembershipContext = {
+  role: TenantRole;
+  tenant: {
+    id: string;
+    name: string;
+    slug: string;
+    status: string;
+    resellerId: string | null;
+  };
+};
+
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
@@ -74,7 +85,14 @@ export class AuthService {
       verifyUrl,
     });
 
-    return { user, ...tokens };
+    return {
+      user: await this.buildSessionUser(
+        user.id,
+        tenant.id,
+        TenantRole.BUSINESS_ADMIN,
+      ),
+      ...tokens,
+    };
   }
 
   async signIn(dto: SignInDto) {
@@ -105,8 +123,14 @@ export class AuthService {
     });
     await this.usersService.setRefreshTokenHash(user.id, tokens.refreshToken);
 
-    const publicUser = await this.usersService.findOne(user.id);
-    return { user: publicUser, ...tokens };
+    return {
+      user: await this.buildSessionUser(
+        user.id,
+        tenantContext.tenantId,
+        tenantContext.tenantRole,
+      ),
+      ...tokens,
+    };
   }
 
   async refresh(dto: RefreshTokenDto) {
@@ -174,8 +198,8 @@ export class AuthService {
     return { success: true };
   }
 
-  async me(userId: string) {
-    return this.usersService.findOne(userId);
+  async me(userId: string, tenantId?: string, tenantRole?: TenantRole) {
+    return this.buildSessionUser(userId, tenantId, tenantRole);
   }
 
   async verifyEmail(token: string) {
@@ -292,22 +316,18 @@ export class AuthService {
       const memberships = await this.usersService.listTenantMemberships(
         user.id,
       );
-      if (memberships.length === 1) {
+      if (memberships.length > 0) {
+        const defaultMembership = this.selectDefaultMembership(
+          user.role,
+          memberships,
+        );
         return {
-          tenantId: memberships[0].tenant.id,
-          tenantRole: memberships[0].role,
+          tenantId: defaultMembership.tenant.id,
+          tenantRole: defaultMembership.role,
         };
       }
 
-      throw new BadRequestException({
-        message: 'tenantId is required.',
-        tenants: memberships.map((item) => ({
-          id: item.tenant.id,
-          name: item.tenant.name,
-          slug: item.tenant.slug,
-          role: item.role,
-        })),
-      });
+      throw new ForbiddenException('No active tenant memberships found.');
     }
 
     const membership = await this.usersService.findTenantMembership(
@@ -350,6 +370,61 @@ export class AuthService {
 
   private isSuperadmin(role: UserRole) {
     return role === UserRole.SUPERADMIN || role === UserRole.ADMIN;
+  }
+
+  private selectDefaultMembership(
+    globalRole: UserRole,
+    memberships: TenantMembershipContext[],
+  ) {
+    if (memberships.length === 1) {
+      return memberships[0];
+    }
+
+    if (
+      globalRole === UserRole.SUPERADMIN ||
+      globalRole === UserRole.RESELLER
+    ) {
+      return memberships[0];
+    }
+
+    if (globalRole === UserRole.ADMIN) {
+      return (
+        memberships.find(
+          (membership) => membership.role === TenantRole.BUSINESS_ADMIN,
+        ) ?? memberships[0]
+      );
+    }
+
+    if (globalRole === UserRole.STAFF) {
+      return (
+        memberships.find(
+          (membership) => membership.role === TenantRole.STAFF,
+        ) ??
+        memberships.find(
+          (membership) => membership.role === TenantRole.CLIENT,
+        ) ??
+        memberships[0]
+      );
+    }
+
+    if (globalRole === UserRole.CLIENT) {
+      return (
+        memberships.find(
+          (membership) => membership.role === TenantRole.CLIENT,
+        ) ?? memberships[0]
+      );
+    }
+
+    const tenantRolePriority: Record<TenantRole, number> = {
+      BUSINESS_ADMIN: 0,
+      STAFF: 1,
+      CLIENT: 2,
+    };
+
+    return [...memberships].sort(
+      (left, right) =>
+        tenantRolePriority[left.role] - tenantRolePriority[right.role],
+    )[0];
   }
 
   private slugifyTenantName(value: string) {
@@ -497,5 +572,46 @@ export class AuthService {
     }
 
     return Math.floor(parsed * 60 * 1000);
+  }
+
+  private async buildSessionUser(
+    userId: string,
+    tenantId?: string,
+    tenantRole?: TenantRole,
+  ) {
+    const [user, memberships] = await Promise.all([
+      this.usersService.findOne(userId),
+      this.usersService.listTenantMemberships(userId),
+    ]);
+
+    const activeMembership =
+      memberships.find((membership) => membership.tenant.id === tenantId) ??
+      memberships[0];
+
+    return {
+      ...user,
+      tenantId: activeMembership?.tenant.id ?? tenantId,
+      tenantRole: tenantRole ?? activeMembership?.role,
+      activeTenant: activeMembership
+        ? {
+            id: activeMembership.tenant.id,
+            name: activeMembership.tenant.name,
+            slug: activeMembership.tenant.slug,
+            status: activeMembership.tenant.status,
+            resellerId: activeMembership.tenant.resellerId,
+            role: activeMembership.role,
+          }
+        : null,
+      memberships: memberships.map((membership) => ({
+        role: membership.role,
+        tenant: {
+          id: membership.tenant.id,
+          name: membership.tenant.name,
+          slug: membership.tenant.slug,
+          status: membership.tenant.status,
+          resellerId: membership.tenant.resellerId,
+        },
+      })),
+    };
   }
 }

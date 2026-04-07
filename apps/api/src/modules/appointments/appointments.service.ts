@@ -13,6 +13,26 @@ import { IdempotencyCacheService } from './idempotency-cache.service';
 import { AvailabilityService } from '../availability/availability.service';
 import { ClientsService } from '../clients/clients.service';
 
+const appointmentListSelect = {
+  id: true,
+  tenantId: true,
+  userId: true,
+  startsAt: true,
+  endsAt: true,
+  status: true,
+  notes: true,
+  cancelledAt: true,
+  createdAt: true,
+  updatedAt: true,
+  user: {
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+    },
+  },
+} as const;
+
 @Injectable()
 export class AppointmentsService {
   private readonly logger = new Logger(AppointmentsService.name);
@@ -159,6 +179,8 @@ export class AppointmentsService {
     }
 
     this.scheduleAppointmentNotifications({
+      tenantId,
+      appointmentId: appointment.id,
       email: user.email,
       fullName: user.fullName,
       startsAtIso: startsAt.toISOString(),
@@ -171,28 +193,14 @@ export class AppointmentsService {
     return this.prisma.appointment.findMany({
       where: { userId, tenantId },
       orderBy: { startsAt: 'asc' },
-      include: {
-        service: {
-          select: { id: true, name: true, duration: true, price: true, color: true },
-        },
-        client: {
-          select: { id: true, name: true, email: true, phone: true },
-        },
-      },
+      select: appointmentListSelect,
     });
   }
 
   async findOne(userId: string, tenantId: string, id: string) {
     const appointment = await this.prisma.appointment.findUnique({
       where: { id },
-      include: {
-        service: {
-          select: { id: true, name: true, duration: true, price: true, color: true },
-        },
-        client: {
-          select: { id: true, name: true, email: true, phone: true },
-        },
-      },
+      select: appointmentListSelect,
     });
 
     if (!appointment) {
@@ -361,6 +369,8 @@ export class AppointmentsService {
   }
 
   private scheduleAppointmentNotifications(params: {
+    tenantId: string;
+    appointmentId: string;
     email: string;
     fullName: string;
     startsAtIso: string;
@@ -376,6 +386,8 @@ export class AppointmentsService {
 
     const tasks: Promise<void>[] = [
       this.notificationsService.enqueueAppointmentConfirmationEmail({
+        tenantId: params.tenantId,
+        appointmentId: params.appointmentId,
         to: params.email,
         fullName: params.fullName,
         startsAtIso: params.startsAtIso,
@@ -385,6 +397,8 @@ export class AppointmentsService {
     if (reminder24DelayMs > 0) {
       tasks.push(
         this.notificationsService.enqueueAppointmentReminderEmail({
+          tenantId: params.tenantId,
+          appointmentId: params.appointmentId,
           to: params.email,
           fullName: params.fullName,
           startsAtIso: params.startsAtIso,
@@ -397,6 +411,8 @@ export class AppointmentsService {
     if (reminder1DelayMs > 0) {
       tasks.push(
         this.notificationsService.enqueueAppointmentReminderEmail({
+          tenantId: params.tenantId,
+          appointmentId: params.appointmentId,
           to: params.email,
           fullName: params.fullName,
           startsAtIso: params.startsAtIso,

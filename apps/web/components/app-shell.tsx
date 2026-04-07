@@ -20,21 +20,20 @@ import {
   Brain,
   Smartphone,
   Users,
-  BarChart3,
-  Users2,
   FileText,
   Phone,
-  GraduationCap,
-  Code,
   Package,
   Layers,
   BookOpen,
   Star,
   HelpCircle,
   Mail,
+  Scissors,
+  Sparkles,
+  Palette,
+  Dumbbell,
 } from "lucide-react";
 import { NavbarItem, type NavbarItemType } from "./navbar-item";
-import { DollarSign as FaDollarSign } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/providers/auth-provider";
 
@@ -43,6 +42,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { status, user, logout } = useAuth();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
+  const isDashboardRoute = pathname.startsWith("/dashboard");
 
   // Dropdown nav items
   const productsItems = [
@@ -74,29 +74,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   const solutionsSections = [
     {
-      label: "By Business Size",
+      label: "Explore",
       items: [
-        { label: "Individuals", desc: "For independent entrepreneurs" },
-        { label: "Small Businesses", desc: "For growing businesses" },
-        { label: "Large Enterprises", desc: "For enterprise scale" },
-      ],
-    },
-    {
-      label: "By Team",
-      items: [
-        { label: "Sales", icon: Users },
-        { label: "Marketing", icon: BarChart3 },
-        { label: "Customer Service", icon: Phone },
-        { label: "Recruitment", icon: Users2 },
+        { href: "/solutions", label: "All solutions", desc: "Overview for every business type" },
+        { href: "/solutions#individuals", label: "Individuals", desc: "For solo professionals" },
+        { href: "/#pricing", label: "Pricing", desc: "Plans for growth stages" },
       ],
     },
     {
       label: "By Industry",
       items: [
-        { label: "Education", icon: GraduationCap },
-        { label: "Technology", icon: Code },
-        { label: "Financial Services", icon: FaDollarSign },
-        { label: "Professional Services", icon: FileText },
+        { href: "/solutions/clinics", label: "Clinics", icon: Users, desc: "Healthcare and patient scheduling" },
+        { href: "/solutions/barbershops", label: "Barbershops", icon: Scissors, desc: "Chairs full during peak hours" },
+        { href: "/solutions/spas", label: "Spas", icon: Sparkles, desc: "Premium reminders and treatment flow" },
+        { href: "/solutions/consultancies", label: "Consultancies", icon: FileText, desc: "High-value meetings without friction" },
+      ],
+    },
+    {
+      label: "More Fits",
+      items: [
+        { href: "/solutions/studios", label: "Creative Studios", icon: Palette, desc: "Sessions and reviews in one flow" },
+        { href: "/solutions/coaches", label: "Coaches", icon: Dumbbell, desc: "For trainers and solo operators" },
+        { href: "/appointment-system", label: "Product overview", icon: Package, desc: "How the core platform works" },
+        { href: "/contact", label: "Talk to sales", icon: Phone, desc: "Get a rollout plan for your use case" },
       ],
     },
   ];
@@ -146,6 +146,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     window.scrollTo({ top: 0, left: 0, behavior: "auto" });
   }, [pathname]);
 
+  if (isDashboardRoute) {
+    return <div className="dashboard-app-shell">{children}</div>;
+  }
+
   return (
     <div className="site-wrapper">
       <div className="bg-layer" aria-hidden={true}>
@@ -180,7 +184,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             {!isAuthenticated ? (
               <>
                 <LanguageSwitcher />
-                <Button variant="outline" size="sm" asChild>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  asChild={true}
+                  className="border-slate-300 text-slate-800 hover:bg-slate-100"
+                >
                   <Link href="/login" onClick={() => setMenuOpen(false)}>
                     {t("nav.login")}
                   </Link>
@@ -200,6 +209,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Button
                   variant="ghost"
                   size="sm"
+                  className="text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                   type="button"
                   onClick={() => {
                     void logout();

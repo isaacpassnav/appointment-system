@@ -1,5 +1,25 @@
+import type { TenantPlan } from '@/lib/plan-features';
+import type { UserRole } from '@/lib/types';
+
 export type TenantScoped = {
   tenantId: string;
+};
+
+export type DashboardTenantSummary = {
+  id: string;
+  name: string;
+  role: UserRole;
+  plan: TenantPlan;
+  logoSrc?: string | null;
+  trialDaysLeft?: number;
+};
+
+export type DashboardNotification = TenantScoped & {
+  id: string;
+  title: string;
+  detail: string;
+  timeLabel: string;
+  unread: boolean;
 };
 
 export type DashboardAppointmentStatus =

@@ -40,7 +40,7 @@ Monorepo para un sistema SaaS multi-tenant de gestion de citas con automatizacio
 - [x] Fallback por variables `UPSTASH_REDIS_REST_*` si falta `REDIS_URL`
 - [x] Modo free: processor inline en API (sin servicio worker dedicado)
 - [x] Recordatorios 24h y 1h antes (jobs delayed al crear cita)
-- [ ] Dead-letter queue con politica de reintentos avanzada
+- [x] Dead-letter queue explicita (`notifications-dead-letter`) en fallo final
 
 ### Fase 3 - Frontend MVP
 
@@ -65,6 +65,10 @@ Monorepo para un sistema SaaS multi-tenant de gestion de citas con automatizacio
 - Proveedor de correo endurecido:
   - SMTP (Brevo) como primario con fallback a Resend.
   - Si falla encolar job, API hace fallback directo de envio para no perder correos transaccionales.
+- Trazabilidad de notificaciones:
+  - `NotificationLog` se crea en `QUEUED` y se actualiza a `SENT/FAILED`.
+  - Endpoint `GET /api/notifications/metrics` para dashboard por tenant.
+  - Fallo final de job se replica en `notifications-dead-letter` para análisis operativo.
 
 ## Variables de entorno clave
 
@@ -85,6 +89,8 @@ Monorepo para un sistema SaaS multi-tenant de gestion de citas con automatizacio
 - `FRONTEND_PUBLIC_BASE_URL` (para links de verificacion amigables)
 - `NOTIFICATIONS_INLINE_PROCESSOR_ENABLED` (`true` por defecto)
 - `WORKER_CONCURRENCY` (concurrencia del processor inline)
+- `NOTIFICATIONS_MAX_ATTEMPTS` (intentos de retry BullMQ)
+- `NOTIFICATIONS_BACKOFF_MS` (backoff base en ms)
 
 ### Worker (`apps/worker`)
 

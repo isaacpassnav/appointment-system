@@ -34,76 +34,197 @@ async function run() {
 
   const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
   const prisma = new PrismaClient({ adapter });
-  const email =
-    process.env.SEED_USER_EMAIL?.trim().toLowerCase() ??
-    'demo.client@appointment.local';
-  const password = process.env.SEED_USER_PASSWORD ?? 'DemoPass123!';
-  const fullName = process.env.SEED_USER_NAME ?? 'Demo Client';
-  const timezone = process.env.SEED_USER_TIMEZONE ?? 'UTC';
-  const passwordHash = await bcrypt.hash(password, 10);
-  const tenantName =
-    process.env.SEED_TENANT_NAME ?? 'Default Tenant';
-  const tenantSlug =
-    process.env.SEED_TENANT_SLUG ?? 'default-tenant';
+
+  const sharedPassword = process.env.SEED_USER_PASSWORD ?? 'DemoPass123!';
+  const sharedTimezone = process.env.SEED_USER_TIMEZONE ?? 'America/Lima';
+  const passwordHash = await bcrypt.hash(sharedPassword, 10);
+
+  const clinicTenantName = process.env.SEED_TENANT_NAME ?? 'Clinica Dental Sonrisa';
+  const clinicTenantSlug = process.env.SEED_TENANT_SLUG ?? 'clinica-dental-sonrisa';
+
+  const demoUsers = [
+    {
+      key: 'superadmin',
+      email: 'demo.superadmin@appointment.local',
+      fullName: 'Isaac Superadmin',
+      role: UserRole.SUPERADMIN,
+    },
+    {
+      key: 'reseller',
+      email: 'demo.reseller@appointment.local',
+      fullName: 'Rosa Reseller',
+      role: UserRole.RESELLER,
+    },
+    {
+      key: 'admin',
+      email: 'demo.admin@appointment.local',
+      fullName: 'Diego Business Admin',
+      role: UserRole.ADMIN,
+    },
+    {
+      key: 'staff',
+      email: 'demo.staff@appointment.local',
+      fullName: 'Sofia Staff',
+      role: UserRole.STAFF,
+    },
+    {
+      key: 'client',
+      email:
+        process.env.SEED_USER_EMAIL?.trim().toLowerCase() ??
+        'demo.client@appointment.local',
+      fullName: process.env.SEED_USER_NAME ?? 'Carlos Client',
+      role: UserRole.CLIENT,
+    },
+  ] as const;
 
   try {
-    const user = await prisma.user.upsert({
-      where: { email },
+    const users = await Promise.all(
+      demoUsers.map(async (demoUser) => {
+        const user = await prisma.user.upsert({
+          where: { email: demoUser.email },
+          create: {
+            email: demoUser.email,
+            passwordHash,
+            fullName: demoUser.fullName,
+            timezone: sharedTimezone,
+            role: demoUser.role,
+            emailVerified: true,
+          },
+          update: {
+            passwordHash,
+            fullName: demoUser.fullName,
+            timezone: sharedTimezone,
+            role: demoUser.role,
+            emailVerified: true,
+            emailVerificationTokenHash: null,
+            emailVerificationTokenExpiresAt: null,
+          },
+          select: { id: true, email: true, role: true },
+        });
+
+        return {
+          ...demoUser,
+          id: user.id,
+        };
+      }),
+    );
+
+    const userByKey = Object.fromEntries(
+      users.map((user) => [user.key, user]),
+    ) as Record<(typeof demoUsers)[number]['key'], (typeof users)[number]>;
+
+    const controlTenant = await prisma.tenant.upsert({
+      where: { slug: 'appointmentos-control' },
       create: {
-        email,
-        passwordHash,
-        fullName,
-        timezone,
-        role: UserRole.CLIENT,
-        emailVerified: true,
+        name: 'AppointmentOS Control',
+        slug: 'appointmentos-control',
+        status: 'ACTIVE',
       },
       update: {
-        passwordHash,
-        fullName,
-        timezone,
-        emailVerified: true,
-        emailVerificationTokenHash: null,
-        emailVerificationTokenExpiresAt: null,
+        name: 'AppointmentOS Control',
+        status: 'ACTIVE',
       },
-      select: { id: true, email: true },
+      select: { id: true, name: true },
     });
 
-    const tenant = await prisma.tenant.upsert({
-      where: { slug: tenantSlug },
+    const resellerTenant = await prisma.tenant.upsert({
+      where: { slug: 'partner-growth-group' },
       create: {
-        name: tenantName,
-        slug: tenantSlug,
+        name: 'Partner Growth Group',
+        slug: 'partner-growth-group',
         status: 'ACTIVE',
+        resellerId: userByKey.reseller.id,
       },
       update: {
-        name: tenantName,
+        name: 'Partner Growth Group',
+        status: 'ACTIVE',
+        resellerId: userByKey.reseller.id,
       },
-      select: { id: true, slug: true },
+      select: { id: true, name: true },
     });
 
-    await prisma.tenantMember.upsert({
-      where: {
-        tenantId_userId: {
-          tenantId: tenant.id,
-          userId: user.id,
-        },
-      },
+    const clinicTenant = await prisma.tenant.upsert({
+      where: { slug: clinicTenantSlug },
       create: {
-        tenantId: tenant.id,
-        userId: user.id,
-        role: TenantRole.BUSINESS_ADMIN,
+        name: clinicTenantName,
+        slug: clinicTenantSlug,
         status: 'ACTIVE',
+        resellerId: userByKey.reseller.id,
       },
       update: {
-        role: TenantRole.BUSINESS_ADMIN,
+        name: clinicTenantName,
         status: 'ACTIVE',
+        resellerId: userByKey.reseller.id,
       },
+      select: { id: true, name: true },
     });
+
+    const memberships = [
+      {
+        tenantId: controlTenant.id,
+        userId: userByKey.superadmin.id,
+        role: TenantRole.BUSINESS_ADMIN,
+      },
+      {
+        tenantId: resellerTenant.id,
+        userId: userByKey.reseller.id,
+        role: TenantRole.BUSINESS_ADMIN,
+      },
+      {
+        tenantId: clinicTenant.id,
+        userId: userByKey.admin.id,
+        role: TenantRole.BUSINESS_ADMIN,
+      },
+      {
+        tenantId: clinicTenant.id,
+        userId: userByKey.staff.id,
+        role: TenantRole.STAFF,
+      },
+      {
+        tenantId: clinicTenant.id,
+        userId: userByKey.client.id,
+        role: TenantRole.CLIENT,
+      },
+    ];
+
+    await Promise.all(
+      users.map((user) =>
+        prisma.tenantMember.updateMany({
+          where: {
+            userId: user.id,
+          },
+          data: {
+            status: 'SUSPENDED',
+          },
+        }),
+      ),
+    );
+
+    await Promise.all(
+      memberships.map((membership) =>
+        prisma.tenantMember.upsert({
+          where: {
+            tenantId_userId: {
+              tenantId: membership.tenantId,
+              userId: membership.userId,
+            },
+          },
+          create: {
+            ...membership,
+            status: 'ACTIVE',
+          },
+          update: {
+            role: membership.role,
+            status: 'ACTIVE',
+          },
+        }),
+      ),
+    );
 
     const existingSeedAppointments = await prisma.appointment.count({
       where: {
-        tenantId: tenant.id,
-        userId: user.id,
+        tenantId: clinicTenant.id,
+        userId: userByKey.client.id,
         notes: {
           startsWith: '[seed]',
         },
@@ -112,19 +233,27 @@ async function run() {
 
     if (existingSeedAppointments === 0) {
       const now = new Date();
-      const slots = [1, 3, 7].map((daysAhead, idx) => {
+      const slots = [
+        { daysAhead: 0, hour: 15, note: '[seed] dental cleaning' },
+        { daysAhead: 0, hour: 17, note: '[seed] orthodontics review' },
+        { daysAhead: 1, hour: 10, note: '[seed] general consultation' },
+        { daysAhead: 2, hour: 12, note: '[seed] whitening session' },
+      ].map((slot, index) => {
         const startsAt = new Date(now);
-        startsAt.setUTCDate(now.getUTCDate() + daysAhead);
-        startsAt.setUTCHours(14 + idx, 0, 0, 0);
-        const endsAt = new Date(startsAt.getTime() + 30 * 60_000);
+        startsAt.setUTCDate(now.getUTCDate() + slot.daysAhead);
+        startsAt.setUTCHours(slot.hour + index, 0, 0, 0);
+        const endsAt = new Date(startsAt.getTime() + 45 * 60_000);
 
         return {
-          tenantId: tenant.id,
-          userId: user.id,
+          tenantId: clinicTenant.id,
+          userId: userByKey.client.id,
           startsAt,
           endsAt,
-          status: AppointmentStatus.SCHEDULED,
-          notes: `[seed] demo appointment #${idx + 1}`,
+          status:
+            index === 0
+              ? AppointmentStatus.CONFIRMED
+              : AppointmentStatus.SCHEDULED,
+          notes: slot.note,
         };
       });
 
@@ -132,7 +261,19 @@ async function run() {
     }
 
     console.log('Seed completed successfully.');
-    console.log(`Demo user: ${email}`);
+    console.log(`Shared password: ${sharedPassword}`);
+    console.table(
+      users.map((user) => ({
+        role: user.role,
+        email: user.email,
+        tenant:
+          user.key === 'superadmin'
+            ? controlTenant.name
+            : user.key === 'reseller'
+              ? resellerTenant.name
+              : clinicTenant.name,
+      })),
+    );
   } finally {
     await prisma.$disconnect();
   }
