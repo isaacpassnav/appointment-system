@@ -73,22 +73,65 @@ model User {
   appointments                   Appointment[]
   memberships                    TenantMember[]
   resellerTenants                Tenant[]      @relation("ResellerTenants")
+  clients                        Client[]
 }
 
 model Tenant {
-  id          String        @id @default(uuid()) @db.Uuid
-  name        String
-  slug        String        @unique
-  status      TenantStatus @default(ACTIVE)
-  resellerId  String?       @db.Uuid
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  reseller    User?         @relation("ResellerTenants", fields: [resellerId], references: [id], onDelete: SetNull)
-  members     TenantMember[]
-  appointments Appointment[]
-  notifications NotificationLog[]
+  id              String            @id @default(uuid()) @db.Uuid
+  name            String
+  slug            String            @unique
+  status          TenantStatus      @default(ACTIVE)
+  resellerId      String?           @db.Uuid
+  timezone        String            @default("UTC")
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  reseller        User?             @relation("ResellerTenants", fields: [resellerId], references: [id], onDelete: SetNull)
+  members         TenantMember[]
+  appointments    Appointment[]
+  notifications   NotificationLog[]
+  services        Service[]
+  workingHours    WorkingHours[]
+  exceptionDates  ExceptionDate[]
+  clients         Client[]
+  settings        TenantSettings?
 
   @@index([resellerId])
+}
+
+model TenantSettings {
+  id                        String   @id @default(uuid()) @db.Uuid
+  tenantId                  String   @unique @db.Uuid
+
+  // Branding
+  businessName              String?
+  businessEmail             String?
+  businessPhone             String?
+  businessAddress           String?
+  logoUrl                   String?
+
+  // Notificaciones
+  reminderHoursBefore       Int      @default(24) // Horas antes para enviar recordatorio
+  enableEmailReminders      Boolean  @default(true)
+  enableSmsReminders        Boolean  @default(false)
+
+  // Políticas de citas
+  minBookingNoticeHours     Int      @default(2)  // Mínimo horas de anticipación para agendar
+  maxBookingAdvanceDays     Int      @default(30) // Máximo días de anticipación
+  allowSameDayBooking       Boolean  @default(true)
+  cancellationPolicyHours   Int      @default(24) // Horas mínimas para cancelar
+
+  // Horario por defecto
+  defaultTimezone           String   @default("UTC")
+
+  // Configuración adicional
+  notes                     String?
+
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 model TenantMember {
@@ -107,10 +150,31 @@ model TenantMember {
   @@index([tenantId, role])
 }
 
+model Service {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  name        String
+  description String?
+  duration    Int      // duración en minutos
+  price       Decimal? @db.Decimal(10, 2)
+  color       String?  // color para mostrar en calendario (hex)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+}
+
 model Appointment {
   id                      String            @id @default(uuid()) @db.Uuid
   tenantId                String            @db.Uuid
   userId                  String            @db.Uuid
+  clientId                String?           @db.Uuid
+  serviceId               String?           @db.Uuid
   startsAt                DateTime
   endsAt                  DateTime
   status                  AppointmentStatus @default(SCHEDULED)
@@ -121,12 +185,16 @@ model Appointment {
   updatedAt               DateTime          @updatedAt
   tenant                  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user                    User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client                  Client?           @relation(fields: [clientId], references: [id], onDelete: SetNull)
+  service                 Service?          @relation(fields: [serviceId], references: [id], onDelete: SetNull)
   notifications           NotificationLog[]
 
   @@index([tenantId, startsAt])
   @@index([tenantId, status])
   @@index([userId, startsAt])
   @@index([startsAt, endsAt])
+  @@index([serviceId])
+  @@index([clientId])
 }
 
 model NotificationLog {
@@ -145,4 +213,64 @@ model NotificationLog {
 
   @@index([appointmentId, status])
   @@index([tenantId, status])
+}
+
+// Horarios de atención por día de semana (0=Domingo, 6=Sábado)
+model WorkingHours {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @db.Uuid
+  dayOfWeek Int      // 0-6, donde 0 es Domingo
+  startTime String   // Formato HH:mm (ej: "09:00")
+  endTime   String   // Formato HH:mm (ej: "18:00")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, dayOfWeek])
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+}
+
+// Excepciones: días bloqueados o con horarios especiales
+model ExceptionDate {
+  id          String    @id @default(uuid()) @db.Uuid
+  tenantId    String    @db.Uuid
+  date        DateTime  @db.Date // Solo la fecha, sin hora
+  reason      String?
+  isBlocked   Boolean   @default(true) // true = bloqueado completo, false = horario especial
+  startTime   String?   // Solo si isBlocked=false
+  endTime     String?   // Solo si isBlocked=false
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, date])
+  @@index([tenantId])
+  @@index([tenantId, date])
+}
+
+// Clientes del negocio (pueden ser usuarios registrados o no)
+model Client {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @db.Uuid
+  userId      String?  @db.Uuid // Si el cliente tiene cuenta de usuario
+  email       String
+  name        String
+  phone       String?
+  notes       String?  // Notas internas sobre el cliente
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  appointments Appointment[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@index([tenantId, isActive])
+  @@index([userId])
 }

@@ -20,9 +20,8 @@ pnpm-debug.log*
 
 # Next.js build output
 apps/web/.next/
-
-# Claude Code local config
 .claude/
+.cursor/
 
 # IDE / OS
 .vscode/
