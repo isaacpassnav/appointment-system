@@ -107,7 +107,7 @@ export class AuthController {
   @UseGuards(AccessTokenGuard)
   @Get('me')
   me(@CurrentUser() user: JwtPayload) {
-    return this.authService.me(user.sub);
+    return this.authService.me(user.sub, user.tenantId, user.tenantRole);
   }
 
   @ApiBearerAuth('access-token')

@@ -20,6 +20,9 @@ export type VerifyEmailJobData = {
 
 export type AppointmentConfirmationEmailJobData = {
   type: typeof NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL;
+  tenantId: string;
+  appointmentId: string;
+  notificationLogId: string;
   to: string;
   fullName: string;
   startsAtIso: string;
@@ -27,6 +30,9 @@ export type AppointmentConfirmationEmailJobData = {
 
 export type AppointmentReminderEmailJobData = {
   type: typeof NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL;
+  tenantId: string;
+  appointmentId: string;
+  notificationLogId: string;
   to: string;
   fullName: string;
   startsAtIso: string;

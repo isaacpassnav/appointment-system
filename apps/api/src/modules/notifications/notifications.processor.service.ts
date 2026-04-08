@@ -1,30 +1,47 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Worker } from 'bullmq';
+import { NotificationStatus } from '@prisma/client';
+import { Job, Queue, Worker } from 'bullmq';
 import { MailService } from '../mail/mail.service';
+import { PrismaService } from '../../prisma/prisma.service';
 import type { NotificationJobData } from './notification-job.types';
 import {
   NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL,
   NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL,
   NOTIFICATION_JOB_VERIFY_EMAIL,
   NOTIFICATION_JOB_WELCOME_EMAIL,
+  NOTIFICATIONS_DEAD_LETTER_QUEUE_NAME,
   NOTIFICATIONS_QUEUE_NAME,
 } from './notifications.constants';
+
+type NotificationDeadLetterPayload = {
+  queue: typeof NOTIFICATIONS_QUEUE_NAME;
+  jobId: string;
+  jobName: string;
+  attemptsMade: number;
+  maxAttempts: number;
+  failedAt: string;
+  reason: string;
+  data: NotificationJobData;
+};
 
 @Injectable()
 export class NotificationsProcessorService implements OnModuleDestroy {
   private readonly logger = new Logger(NotificationsProcessorService.name);
   private readonly worker: Worker<NotificationJobData> | null;
+  private readonly deadLetterQueue: Queue<NotificationDeadLetterPayload> | null;
 
   constructor(
     private readonly configService: ConfigService,
     private readonly mailService: MailService,
+    private readonly prisma: PrismaService,
   ) {
     if (!this.isInlineProcessorEnabled()) {
       this.logger.log(
         'Inline notifications processor disabled (NOTIFICATIONS_INLINE_PROCESSOR_ENABLED=false).',
       );
       this.worker = null;
+      this.deadLetterQueue = null;
       return;
     }
 
@@ -34,17 +51,30 @@ export class NotificationsProcessorService implements OnModuleDestroy {
         'Inline notifications processor skipped. Missing REDIS_URL (or UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN).',
       );
       this.worker = null;
+      this.deadLetterQueue = null;
       return;
     }
 
     const concurrency = this.resolveConcurrency();
+    const connection = this.buildQueueConnection(redisUrl);
 
     this.worker = new Worker<NotificationJobData>(
       NOTIFICATIONS_QUEUE_NAME,
-      async (job) => this.process(job.name, job.data),
+      async (job) => this.process(job),
       {
-        connection: this.buildQueueConnection(redisUrl),
+        connection,
         concurrency,
+      },
+    );
+
+    this.deadLetterQueue = new Queue<NotificationDeadLetterPayload>(
+      NOTIFICATIONS_DEAD_LETTER_QUEUE_NAME,
+      {
+        connection,
+        defaultJobOptions: {
+          removeOnComplete: 1_000,
+          removeOnFail: false,
+        },
       },
     );
 
@@ -62,44 +92,65 @@ export class NotificationsProcessorService implements OnModuleDestroy {
   }
 
   async onModuleDestroy() {
-    await this.worker?.close();
+    await Promise.allSettled([
+      this.worker?.close(),
+      this.deadLetterQueue?.close(),
+    ]);
   }
 
-  private async process(jobName: string, data: NotificationJobData) {
-    if (data.type === NOTIFICATION_JOB_WELCOME_EMAIL) {
-      await this.mailService.sendWelcomeEmail(data.to, data.fullName);
-      return;
-    }
+  private async process(job: Job<NotificationJobData>) {
+    const data = job.data;
 
-    if (data.type === NOTIFICATION_JOB_VERIFY_EMAIL) {
-      await this.mailService.sendVerifyEmail(
-        data.to,
-        data.fullName,
-        data.verifyUrl,
-      );
-      return;
-    }
+    try {
+      if (data.type === NOTIFICATION_JOB_WELCOME_EMAIL) {
+        await this.mailService.sendWelcomeEmail(data.to, data.fullName);
+        return;
+      }
 
-    if (data.type === NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL) {
-      await this.mailService.sendAppointmentConfirmationEmail(
-        data.to,
-        data.fullName,
-        data.startsAtIso,
-      );
-      return;
-    }
+      if (data.type === NOTIFICATION_JOB_VERIFY_EMAIL) {
+        await this.mailService.sendVerifyEmail(
+          data.to,
+          data.fullName,
+          data.verifyUrl,
+        );
+        return;
+      }
 
-    if (data.type === NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL) {
-      await this.mailService.sendAppointmentReminderEmail(
-        data.to,
-        data.fullName,
-        data.startsAtIso,
-        data.reminderOffsetHours,
-      );
-      return;
-    }
+      if (data.type === NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL) {
+        await this.mailService.sendAppointmentConfirmationEmail(
+          data.to,
+          data.fullName,
+          data.startsAtIso,
+        );
+        await this.markNotificationSent(data.notificationLogId);
+        return;
+      }
 
-    throw new Error(`Unsupported notification job: ${jobName}`);
+      if (data.type === NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL) {
+        await this.mailService.sendAppointmentReminderEmail(
+          data.to,
+          data.fullName,
+          data.startsAtIso,
+          data.reminderOffsetHours,
+        );
+        await this.markNotificationSent(data.notificationLogId);
+        return;
+      }
+
+      throw new Error(`Unsupported notification job: ${job.name}`);
+    } catch (error: unknown) {
+      const isFinalFailure = this.isFinalFailure(job);
+      if (isFinalFailure && this.isAppointmentNotification(data)) {
+        const message = error instanceof Error ? error.message : String(error);
+        await this.markNotificationFailed(data.notificationLogId, message);
+      }
+
+      if (isFinalFailure) {
+        await this.enqueueDeadLetter(job, error);
+      }
+
+      throw error;
+    }
   }
 
   private buildQueueConnection(redisUrl: string) {
@@ -162,5 +213,78 @@ export class NotificationsProcessorService implements OnModuleDestroy {
     }
 
     return !['0', 'false', 'no', 'off'].includes(rawValue);
+  }
+
+  private async markNotificationSent(notificationLogId: string) {
+    await this.prisma.notificationLog.update({
+      where: { id: notificationLogId },
+      data: {
+        status: NotificationStatus.SENT,
+        sentAt: new Date(),
+        errorMessage: null,
+      },
+    });
+  }
+
+  private async markNotificationFailed(
+    notificationLogId: string,
+    errorMessage: string,
+  ) {
+    await this.prisma.notificationLog.update({
+      where: { id: notificationLogId },
+      data: {
+        status: NotificationStatus.FAILED,
+        errorMessage: errorMessage.slice(0, 900),
+      },
+    });
+  }
+
+  private isAppointmentNotification(data: NotificationJobData): data is Extract<
+    NotificationJobData,
+    {
+      type:
+        | typeof NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL
+        | typeof NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL;
+    }
+  > {
+    return (
+      data.type === NOTIFICATION_JOB_APPOINTMENT_CONFIRMATION_EMAIL ||
+      data.type === NOTIFICATION_JOB_APPOINTMENT_REMINDER_EMAIL
+    );
+  }
+
+  private isFinalFailure(job: Job<NotificationJobData>) {
+    const maxAttempts =
+      typeof job.opts.attempts === 'number' && job.opts.attempts > 0
+        ? job.opts.attempts
+        : 1;
+
+    return job.attemptsMade + 1 >= maxAttempts;
+  }
+
+  private async enqueueDeadLetter(
+    job: Job<NotificationJobData>,
+    error: unknown,
+  ) {
+    if (!this.deadLetterQueue) {
+      return;
+    }
+
+    const reason = error instanceof Error ? error.message : String(error);
+    const maxAttempts =
+      typeof job.opts.attempts === 'number' && job.opts.attempts > 0
+        ? job.opts.attempts
+        : 1;
+
+    await this.deadLetterQueue.add('notification-dead-letter', {
+      queue: NOTIFICATIONS_QUEUE_NAME,
+      jobId: String(job.id ?? 'unknown'),
+      jobName: job.name,
+      attemptsMade: job.attemptsMade + 1,
+      maxAttempts,
+      failedAt: new Date().toISOString(),
+      reason: reason.slice(0, 900),
+      data: job.data,
+    });
   }
 }

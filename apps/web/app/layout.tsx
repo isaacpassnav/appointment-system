@@ -1,27 +1,27 @@
 import type { Metadata } from 'next';
-import { Space_Grotesk, Source_Sans_3 } from 'next/font/google';
+import { Plus_Jakarta_Sans, Inter } from 'next/font/google';
 import { AppShell } from '@/components/app-shell';
 import { AuthProvider } from '@/providers/auth-provider';
 import { I18nProvider } from '@/providers/i18n-provider';
 import './globals.css';
 import 'aos/dist/aos.css';
 
-const headingFont = Space_Grotesk({
+const headingFont = Plus_Jakarta_Sans({
   subsets: ['latin'],
   variable: '--font-heading',
-  weight: ['500', '600', '700'],
+  weight: ['500', '600', '700', '800'],
 });
 
-const bodyFont = Source_Sans_3({
+const bodyFont = Inter({
   subsets: ['latin'],
   variable: '--font-body',
-  weight: ['400', '500', '600'],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
-  title: 'AppointmentOS Frontend',
+  title: 'AppointmentIO - Intelligent Scheduling',
   description:
-    'Professional scheduling frontend with auth, dashboard, and appointment flows.',
+    'Multi-tenant SaaS appointment scheduling with AI automation. Built for clinics, salons, and service businesses.',
 };
 
 export default function RootLayout({
