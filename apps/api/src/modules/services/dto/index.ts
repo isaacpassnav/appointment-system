@@ -1,13 +1,22 @@
-import { IsString, IsOptional, IsNumber, IsBoolean, IsUUID, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+  Max,
+} from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import type { Service } from '@prisma/client';
 
 export class CreateServiceDto {
   @ApiProperty({ description: 'Service name', example: 'Haircut' })
   @IsString()
   name: string;
 
-  @ApiPropertyOptional({ description: 'Service description', example: 'Professional haircut with styling' })
+  @ApiPropertyOptional({
+    description: 'Service description',
+    example: 'Professional haircut with styling',
+  })
   @IsOptional()
   @IsString()
   description?: string;
@@ -22,7 +31,10 @@ export class CreateServiceDto {
   @IsOptional()
   price?: number;
 
-  @ApiPropertyOptional({ description: 'Color for calendar display', example: '#7c6eff' })
+  @ApiPropertyOptional({
+    description: 'Color for calendar display',
+    example: '#7c6eff',
+  })
   @IsOptional()
   @IsString()
   color?: string;

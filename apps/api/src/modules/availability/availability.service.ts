@@ -127,8 +127,8 @@ export class AvailabilityService {
       date,
       reason: dto.reason,
       isBlocked: dto.isBlocked,
-      startTime: dto.isBlocked ? null : dto.startTime ?? null,
-      endTime: dto.isBlocked ? null : dto.endTime ?? null,
+      startTime: dto.isBlocked ? null : (dto.startTime ?? null),
+      endTime: dto.isBlocked ? null : (dto.endTime ?? null),
       tenant: { connect: { id: tenantId } },
     };
 
@@ -319,10 +319,7 @@ export class AvailabilityService {
       slotEndDate.setUTCHours(slotEndHour, slotEndMin, 0, 0);
 
       const hasConflict = existingAppointments.some((appt) => {
-        return (
-          slotStartDate < appt.endsAt &&
-          slotEndDate > appt.startsAt
-        );
+        return slotStartDate < appt.endsAt && slotEndDate > appt.startsAt;
       });
 
       slots.push({

@@ -4,14 +4,22 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateClientDto, UpdateClientDto, ClientQueryDto, ClientResponseDto } from './dto';
+import {
+  CreateClientDto,
+  UpdateClientDto,
+  ClientQueryDto,
+  ClientResponseDto,
+} from './dto';
 import { Client, Prisma } from '@prisma/client';
 
 @Injectable()
 export class ClientsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(tenantId: string, dto: CreateClientDto): Promise<ClientResponseDto> {
+  async create(
+    tenantId: string,
+    dto: CreateClientDto,
+  ): Promise<ClientResponseDto> {
     // Check if client with email already exists in tenant
     const existing = await this.prisma.client.findUnique({
       where: {
@@ -142,7 +150,7 @@ export class ClientsService {
   }
 
   async remove(tenantId: string, id: string): Promise<void> {
-    const client = await this.findOne(tenantId, id);
+    await this.findOne(tenantId, id);
 
     // Soft delete
     await this.prisma.client.update({
@@ -203,7 +211,9 @@ export class ClientsService {
     };
   }
 
-  private mapToDto(client: Client & { appointments?: any[] }): ClientResponseDto {
+  private mapToDto(
+    client: Client & { appointments?: any[] },
+  ): ClientResponseDto {
     return {
       id: client.id,
       tenantId: client.tenantId,

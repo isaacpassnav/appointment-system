@@ -38,7 +38,10 @@ export class CreateTenantSettingsDto {
   @IsString()
   logoUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Hours before appointment to send reminder', default: 24 })
+  @ApiPropertyOptional({
+    description: 'Hours before appointment to send reminder',
+    default: 24,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
@@ -55,26 +58,38 @@ export class CreateTenantSettingsDto {
   @IsBoolean()
   enableSmsReminders?: boolean;
 
-  @ApiPropertyOptional({ description: 'Minimum hours notice required for booking', default: 2 })
+  @ApiPropertyOptional({
+    description: 'Minimum hours notice required for booking',
+    default: 2,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
   @Max(168)
   minBookingNoticeHours?: number;
 
-  @ApiPropertyOptional({ description: 'Maximum days in advance for booking', default: 30 })
+  @ApiPropertyOptional({
+    description: 'Maximum days in advance for booking',
+    default: 30,
+  })
   @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(365)
   maxBookingAdvanceDays?: number;
 
-  @ApiPropertyOptional({ description: 'Allow same day bookings', default: true })
+  @ApiPropertyOptional({
+    description: 'Allow same day bookings',
+    default: true,
+  })
   @IsOptional()
   @IsBoolean()
   allowSameDayBooking?: boolean;
 
-  @ApiPropertyOptional({ description: 'Hours required for cancellation', default: 24 })
+  @ApiPropertyOptional({
+    description: 'Hours required for cancellation',
+    default: 24,
+  })
   @IsOptional()
   @IsNumber()
   @Min(0)
