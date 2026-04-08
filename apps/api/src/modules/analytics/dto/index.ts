@@ -1,8 +1,4 @@
-import {
-  IsDateString,
-  IsOptional,
-  IsEnum,
-} from 'class-validator';
+import { IsDateString, IsOptional, IsEnum } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export enum AnalyticsPeriod {
@@ -23,7 +19,10 @@ export class AnalyticsQueryDto {
   @IsDateString()
   endDate?: string;
 
-  @ApiPropertyOptional({ enum: AnalyticsPeriod, description: 'Period grouping' })
+  @ApiPropertyOptional({
+    enum: AnalyticsPeriod,
+    description: 'Period grouping',
+  })
   @IsOptional()
   @IsEnum(AnalyticsPeriod)
   period?: AnalyticsPeriod;

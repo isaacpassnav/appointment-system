@@ -1,6 +1,15 @@
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateServiceDto, UpdateServiceDto, ServiceQueryDto, ServiceResponseDto } from './dto';
+import {
+  CreateServiceDto,
+  UpdateServiceDto,
+  ServiceQueryDto,
+  ServiceResponseDto,
+} from './dto';
 import { Service, Prisma } from '@prisma/client';
 
 @Injectable()
@@ -14,7 +23,10 @@ export class ServicesService {
     };
   }
 
-  async create(tenantId: string, dto: CreateServiceDto): Promise<ServiceResponseDto> {
+  async create(
+    tenantId: string,
+    dto: CreateServiceDto,
+  ): Promise<ServiceResponseDto> {
     // Verificar si ya existe un servicio con el mismo nombre en el tenant
     const existing = await this.prisma.service.findFirst({
       where: {
@@ -31,7 +43,8 @@ export class ServicesService {
       name: dto.name,
       description: dto.description,
       duration: dto.duration,
-      price: dto.price !== undefined ? new Prisma.Decimal(dto.price) : undefined,
+      price:
+        dto.price !== undefined ? new Prisma.Decimal(dto.price) : undefined,
       color: dto.color,
       tenant: { connect: { id: tenantId } },
     };
@@ -40,7 +53,10 @@ export class ServicesService {
     return this.mapToResponseDto(created);
   }
 
-  async findAll(tenantId: string, query?: ServiceQueryDto): Promise<ServiceResponseDto[]> {
+  async findAll(
+    tenantId: string,
+    query?: ServiceQueryDto,
+  ): Promise<ServiceResponseDto[]> {
     const where: Prisma.ServiceWhereInput = { tenantId };
 
     if (query?.isActive !== undefined) {
@@ -54,7 +70,7 @@ export class ServicesService {
       where,
       orderBy: { name: 'asc' },
     });
-    return services.map(s => this.mapToResponseDto(s));
+    return services.map((s) => this.mapToResponseDto(s));
   }
 
   async findOne(tenantId: string, id: string): Promise<ServiceResponseDto> {
@@ -69,7 +85,11 @@ export class ServicesService {
     return this.mapToResponseDto(service);
   }
 
-  async update(tenantId: string, id: string, dto: UpdateServiceDto): Promise<ServiceResponseDto> {
+  async update(
+    tenantId: string,
+    id: string,
+    dto: UpdateServiceDto,
+  ): Promise<ServiceResponseDto> {
     await this.findOne(tenantId, id); // Verificar que existe
 
     // Verificar nombre duplicado si se está actualizando
@@ -104,7 +124,7 @@ export class ServicesService {
   }
 
   async remove(tenantId: string, id: string): Promise<void> {
-    const service = await this.findOne(tenantId, id);
+    await this.findOne(tenantId, id);
 
     // Soft delete: marcar como inactivo en lugar de eliminar
     // Esto preserva el historial de citas asociadas

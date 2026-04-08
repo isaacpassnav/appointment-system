@@ -18,7 +18,10 @@ export class CreateClientDto {
   @MaxLength(200)
   name: string;
 
-  @ApiPropertyOptional({ description: 'Client phone number', example: '+1234567890' })
+  @ApiPropertyOptional({
+    description: 'Client phone number',
+    example: '+1234567890',
+  })
   @IsOptional()
   @IsString()
   @MaxLength(30)
@@ -29,7 +32,10 @@ export class CreateClientDto {
   @IsString()
   notes?: string;
 
-  @ApiPropertyOptional({ description: 'Link to existing user account', example: 'uuid-user-id' })
+  @ApiPropertyOptional({
+    description: 'Link to existing user account',
+    example: 'uuid-user-id',
+  })
   @IsOptional()
   @IsUUID()
   userId?: string;

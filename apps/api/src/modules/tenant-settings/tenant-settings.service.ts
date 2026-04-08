@@ -81,16 +81,25 @@ export class TenantSettingsService {
     if (dto.businessName !== undefined) data.businessName = dto.businessName;
     if (dto.businessEmail !== undefined) data.businessEmail = dto.businessEmail;
     if (dto.businessPhone !== undefined) data.businessPhone = dto.businessPhone;
-    if (dto.businessAddress !== undefined) data.businessAddress = dto.businessAddress;
+    if (dto.businessAddress !== undefined)
+      data.businessAddress = dto.businessAddress;
     if (dto.logoUrl !== undefined) data.logoUrl = dto.logoUrl;
-    if (dto.reminderHoursBefore !== undefined) data.reminderHoursBefore = dto.reminderHoursBefore;
-    if (dto.enableEmailReminders !== undefined) data.enableEmailReminders = dto.enableEmailReminders;
-    if (dto.enableSmsReminders !== undefined) data.enableSmsReminders = dto.enableSmsReminders;
-    if (dto.minBookingNoticeHours !== undefined) data.minBookingNoticeHours = dto.minBookingNoticeHours;
-    if (dto.maxBookingAdvanceDays !== undefined) data.maxBookingAdvanceDays = dto.maxBookingAdvanceDays;
-    if (dto.allowSameDayBooking !== undefined) data.allowSameDayBooking = dto.allowSameDayBooking;
-    if (dto.cancellationPolicyHours !== undefined) data.cancellationPolicyHours = dto.cancellationPolicyHours;
-    if (dto.defaultTimezone !== undefined) data.defaultTimezone = dto.defaultTimezone;
+    if (dto.reminderHoursBefore !== undefined)
+      data.reminderHoursBefore = dto.reminderHoursBefore;
+    if (dto.enableEmailReminders !== undefined)
+      data.enableEmailReminders = dto.enableEmailReminders;
+    if (dto.enableSmsReminders !== undefined)
+      data.enableSmsReminders = dto.enableSmsReminders;
+    if (dto.minBookingNoticeHours !== undefined)
+      data.minBookingNoticeHours = dto.minBookingNoticeHours;
+    if (dto.maxBookingAdvanceDays !== undefined)
+      data.maxBookingAdvanceDays = dto.maxBookingAdvanceDays;
+    if (dto.allowSameDayBooking !== undefined)
+      data.allowSameDayBooking = dto.allowSameDayBooking;
+    if (dto.cancellationPolicyHours !== undefined)
+      data.cancellationPolicyHours = dto.cancellationPolicyHours;
+    if (dto.defaultTimezone !== undefined)
+      data.defaultTimezone = dto.defaultTimezone;
     if (dto.notes !== undefined) data.notes = dto.notes;
 
     const updated = await this.prisma.tenantSettings.update({
@@ -115,7 +124,26 @@ export class TenantSettingsService {
     });
   }
 
-  private mapToDto(settings: any): TenantSettingsResponseDto {
+  private mapToDto(settings: {
+    id: string;
+    tenantId: string;
+    businessName: string | null;
+    businessEmail: string | null;
+    businessPhone: string | null;
+    businessAddress: string | null;
+    logoUrl: string | null;
+    reminderHoursBefore: number;
+    enableEmailReminders: boolean;
+    enableSmsReminders: boolean;
+    minBookingNoticeHours: number;
+    maxBookingAdvanceDays: number;
+    allowSameDayBooking: boolean;
+    cancellationPolicyHours: number;
+    defaultTimezone: string;
+    notes: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }): TenantSettingsResponseDto {
     return {
       id: settings.id,
       tenantId: settings.tenantId,

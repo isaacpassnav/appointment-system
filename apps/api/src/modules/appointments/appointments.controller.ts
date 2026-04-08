@@ -19,7 +19,10 @@ import {
 import { Throttle } from '@nestjs/throttler';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
-import { CreateAppointmentDto, UpdateAppointmentDto } from './dto/create-appointment.dto';
+import {
+  CreateAppointmentDto,
+  UpdateAppointmentDto,
+} from './dto/create-appointment.dto';
 import { AppointmentsService } from './appointments.service';
 import type { RequestTenantContext } from '@/common/interfaces/request-tenant-context.interface';
 
@@ -67,14 +70,21 @@ export class AppointmentsController {
     return this.appointmentsService.findOne(user.userId, user.tenantId!, id);
   }
 
-  @ApiOperation({ summary: 'Update an appointment (reschedule or change service)' })
+  @ApiOperation({
+    summary: 'Update an appointment (reschedule or change service)',
+  })
   @Put(':id')
   update(
     @CurrentUser() user: RequestTenantContext,
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateAppointmentDto,
   ) {
-    return this.appointmentsService.update(user.userId, user.tenantId!, id, dto);
+    return this.appointmentsService.update(
+      user.userId,
+      user.tenantId!,
+      id,
+      dto,
+    );
   }
 
   @ApiOperation({ summary: 'Update an appointment (partial)' })
@@ -84,7 +94,12 @@ export class AppointmentsController {
     @Param('id', new ParseUUIDPipe()) id: string,
     @Body() dto: UpdateAppointmentDto,
   ) {
-    return this.appointmentsService.update(user.userId, user.tenantId!, id, dto);
+    return this.appointmentsService.update(
+      user.userId,
+      user.tenantId!,
+      id,
+      dto,
+    );
   }
 
   @ApiOperation({ summary: 'Cancel an appointment by id' })

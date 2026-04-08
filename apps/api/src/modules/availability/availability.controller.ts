@@ -67,7 +67,11 @@ export class AvailabilityController {
     if (isNaN(day) || day < 0 || day > 6) {
       throw new BadRequestException('dayOfWeek must be between 0 and 6');
     }
-    return this.availabilityService.updateWorkingHours(context.tenantId, day, dto);
+    return this.availabilityService.updateWorkingHours(
+      context.tenantId,
+      day,
+      dto,
+    );
   }
 
   @Delete('working-hours/:dayOfWeek')
@@ -116,7 +120,9 @@ export class AvailabilityController {
   }
 
   @Get('exceptions')
-  @ApiOperation({ summary: 'Get exception dates (optionally filtered by date range)' })
+  @ApiOperation({
+    summary: 'Get exception dates (optionally filtered by date range)',
+  })
   async getExceptionDates(
     @Query('startDate') startDate: string,
     @Query('endDate') endDate: string,

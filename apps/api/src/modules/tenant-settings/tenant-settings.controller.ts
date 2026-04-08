@@ -11,10 +11,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TenantSettingsService } from './tenant-settings.service';
-import {
-  CreateTenantSettingsDto,
-  UpdateTenantSettingsDto,
-} from './dto';
+import { CreateTenantSettingsDto, UpdateTenantSettingsDto } from './dto';
 import { AccessTokenGuard } from '@/modules/auth/guards/access-token.guard';
 import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
 import type { RequestTenantContext } from '@/common/interfaces/request-tenant-context.interface';

@@ -8,7 +8,10 @@ import {
 import { AppointmentStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateAppointmentDto, UpdateAppointmentDto } from './dto/create-appointment.dto';
+import {
+  CreateAppointmentDto,
+  UpdateAppointmentDto,
+} from './dto/create-appointment.dto';
 import { IdempotencyCacheService } from './idempotency-cache.service';
 import { AvailabilityService } from '../availability/availability.service';
 import { ClientsService } from '../clients/clients.service';
@@ -29,6 +32,23 @@ const appointmentListSelect = {
       id: true,
       fullName: true,
       email: true,
+    },
+  },
+  service: {
+    select: {
+      id: true,
+      name: true,
+      duration: true,
+      price: true,
+      color: true,
+    },
+  },
+  client: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      phone: true,
     },
   },
 } as const;
@@ -85,7 +105,6 @@ export class AppointmentsService {
 
     // Determinar duración (del servicio o del DTO)
     let durationMinutes = dto.durationMinutes || 30;
-    let serviceName: string | undefined;
 
     if (dto.serviceId) {
       const service = await this.prisma.service.findFirst({
@@ -98,7 +117,6 @@ export class AppointmentsService {
       if (!dto.durationMinutes) {
         durationMinutes = service.duration;
       }
-      serviceName = service.name;
     }
 
     const endsAt = new Date(startsAt.getTime() + durationMinutes * 60_000);
@@ -292,7 +310,9 @@ export class AppointmentsService {
       });
 
       if (conflict) {
-        throw new ConflictException('Appointment overlaps with an existing one.');
+        throw new ConflictException(
+          'Appointment overlaps with an existing one.',
+        );
       }
     }
 
@@ -306,7 +326,13 @@ export class AppointmentsService {
       },
       include: {
         service: {
-          select: { id: true, name: true, duration: true, price: true, color: true },
+          select: {
+            id: true,
+            name: true,
+            duration: true,
+            price: true,
+            color: true,
+          },
         },
         client: {
           select: { id: true, name: true, email: true, phone: true },

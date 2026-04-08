@@ -8,7 +8,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-  import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateAppointmentDto {
   @ApiProperty({
@@ -38,7 +38,8 @@ export class CreateAppointmentDto {
     minimum: 15,
     maximum: 720,
     example: 30,
-    description: 'Duration in minutes (overrides service duration if serviceId provided)',
+    description:
+      'Duration in minutes (overrides service duration if serviceId provided)',
   })
   @IsOptional()
   @IsInt()

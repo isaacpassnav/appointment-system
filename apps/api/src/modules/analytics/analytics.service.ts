@@ -38,11 +38,20 @@ export class AnalyticsService {
     // Métricas de citas
     const appointmentMetrics = {
       total: appointments.length,
-      scheduled: appointments.filter((a) => a.status === AppointmentStatus.SCHEDULED).length,
-      confirmed: appointments.filter((a) => a.status === AppointmentStatus.CONFIRMED).length,
-      completed: appointments.filter((a) => a.status === AppointmentStatus.COMPLETED).length,
-      cancelled: appointments.filter((a) => a.status === AppointmentStatus.CANCELLED).length,
-      noShow: appointments.filter((a) => a.status === AppointmentStatus.NO_SHOW).length,
+      scheduled: appointments.filter(
+        (a) => a.status === AppointmentStatus.SCHEDULED,
+      ).length,
+      confirmed: appointments.filter(
+        (a) => a.status === AppointmentStatus.CONFIRMED,
+      ).length,
+      completed: appointments.filter(
+        (a) => a.status === AppointmentStatus.COMPLETED,
+      ).length,
+      cancelled: appointments.filter(
+        (a) => a.status === AppointmentStatus.CANCELLED,
+      ).length,
+      noShow: appointments.filter((a) => a.status === AppointmentStatus.NO_SHOW)
+        .length,
     };
 
     // Métricas de revenue
@@ -185,7 +194,10 @@ export class AnalyticsService {
     });
 
     // Agrupar por período
-    const grouped = new Map<string, { appointments: number; revenue: number; cancelled: number }>();
+    const grouped = new Map<
+      string,
+      { appointments: number; revenue: number; cancelled: number }
+    >();
 
     appointments.forEach((a) => {
       const date = this.getPeriodKey(a.startsAt, period);
@@ -225,7 +237,12 @@ export class AnalyticsService {
       revenue: number;
     }>
   > {
-    const where: any = {
+    const where: {
+      tenantId: string;
+      status: { not: AppointmentStatus };
+      serviceId: { not: null };
+      startsAt?: { gte: Date; lte: Date };
+    } = {
       tenantId,
       status: { not: AppointmentStatus.CANCELLED },
       serviceId: { not: null },
@@ -274,7 +291,10 @@ export class AnalyticsService {
       .slice(0, 5);
   }
 
-  private getDateRange(query: AnalyticsQueryDto): { startDate: string; endDate: string } {
+  private getDateRange(query: AnalyticsQueryDto): {
+    startDate: string;
+    endDate: string;
+  } {
     if (query.startDate && query.endDate) {
       return { startDate: query.startDate, endDate: query.endDate };
     }
@@ -296,9 +316,10 @@ export class AnalyticsService {
     switch (period) {
       case AnalyticsPeriod.DAY:
         return d.toISOString().split('T')[0];
-      case AnalyticsPeriod.WEEK:
+      case AnalyticsPeriod.WEEK: {
         const weekStart = new Date(d.setDate(d.getDate() - d.getDay()));
         return weekStart.toISOString().split('T')[0];
+      }
       case AnalyticsPeriod.MONTH:
         return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       case AnalyticsPeriod.YEAR:
@@ -323,7 +344,10 @@ export class AnalyticsService {
       const dayOfWeek = current.getDay();
       const dateStr = current.toISOString().split('T')[0];
 
-      if (workingDaysOfWeek.includes(dayOfWeek) && !blockedDates.includes(dateStr)) {
+      if (
+        workingDaysOfWeek.includes(dayOfWeek) &&
+        !blockedDates.includes(dateStr)
+      ) {
         workingDays++;
       }
 
